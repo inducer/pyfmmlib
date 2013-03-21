@@ -207,19 +207,20 @@ def gen_vector_wrappers():
             ("l", ""),
             ("h", "complex*16 wavek")
             ]:
-        gen_vector_wrapper("%s2dtaeval" % what, """
-                %s
-                real*8 rscale
-                real*8 center(2)
-                complex*16 mpole(-nterms:nterms)
-                integer nterms
-                real*8 ztarg(2,nvcount)
-                complex*16 pot(nvcount)
-                integer ifgrad
-                complex*16 grad(2,nvcount)
-                integer ifhess
-                complex*16 hess(3,nvcount)
-                """ % extra_args, ["pot", "grad", "hess"])
+        for expn_type in ["ta", "mp"]:
+            gen_vector_wrapper("%s2d%seval" % (what, expn_type), """
+                    %s
+                    real*8 rscale
+                    real*8 center(2)
+                    complex*16 mpole(-nterms:nterms)
+                    integer nterms
+                    real*8 ztarg(2,nvcount)
+                    complex*16 pot(nvcount)
+                    integer ifgrad
+                    complex*16 grad(2,nvcount)
+                    integer ifhess
+                    complex*16 hess(3,nvcount)
+                    """ % extra_args, ["pot", "grad", "hess"])
 
         hess_output = ""
         taeval_out_args = ["pot", "grad", "hess", "ier"]

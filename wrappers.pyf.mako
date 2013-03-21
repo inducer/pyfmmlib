@@ -20,42 +20,44 @@ python module _internal
         complex*16, intent(out) :: ntop
     end subroutine
 
-    ! {{{ formta entrypoints
+    ! {{{ form{mp,ta} entrypoints
 
     % for dp_or_no in ["", "_dp"]:
       % for what in ["l", "h"]:
         % for dims in [2, 3]:
-          subroutine ${what}${dims}dformta${dp_or_no}(ier, &
-            % if what == "h":
-              zk, &
-            %endif
-            rscale,source, &
-            % if dp_or_no and not (what=="l" and dims == 2):
-              dipstr,  dipvec, &
-            % else:
-              charge, &
-            % endif
-            ns, center, &
-            nterms,locexp)
-              intent(in) rscale,sources,charge,ns,center,nterms
-              intent(out) ier,locexp
-
-              implicit real *8 (a-h,o-z)
-              complex *16 zk,charge(ns)
-              dimension center(${dims}),source(${dims},ns),zdiff(${dims})
-              real *8 dipvec(${dims},ns)
-              complex *16 dipstr(ns)
-              % if dims == 2:
-                % if what == "l":
-                  complex*16 locexp(0:nterms)
-                % else:
-                  complex*16 locexp(-nterms:nterms)
-                % endif
+          % for expn_type in ["mp", "ta"]:
+            subroutine ${what}${dims}dform${expn_type}${dp_or_no}(ier, &
+              % if what == "h":
+                zk, &
+              %endif
+              rscale,source, &
+              % if dp_or_no and not (what=="l" and dims == 2):
+                dipstr,  dipvec, &
               % else:
-                complex*16 locexp(0:nterms,-nterms:nterms)
+                charge, &
               % endif
-          end subroutine
-        %endfor
+              ns, center, &
+              nterms,expn)
+                intent(in) rscale,sources,charge,ns,center,nterms
+                intent(out) ier,expn
+
+                implicit real *8 (a-h,o-z)
+                complex *16 zk,charge(ns)
+                dimension center(${dims}),source(${dims},ns),zdiff(${dims})
+                real *8 dipvec(${dims},ns)
+                complex *16 dipstr(ns)
+                % if dims == 2:
+                  % if what == "l":
+                    complex*16 expn(0:nterms)
+                  % else:
+                    complex*16 expn(-nterms:nterms)
+                  % endif
+                % else:
+                  complex*16 expn(0:nterms,-nterms:nterms)
+                % endif
+            end subroutine
+          % endfor
+        % endfor
       % endfor
     % endfor
 
