@@ -1,0 +1,5 @@
+include README.rst
+include codegen_helpers.py
+include grab-sources.sh
+include vec_wrappers.py
+include wrappers.pyf.mako
