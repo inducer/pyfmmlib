@@ -25,10 +25,10 @@ class Laplace(Equation):
     def in_arg_list(self):
         return ""
 
-    def in_arg_decls(self):
+    def in_arg_decls(self, with_intent=True):
         return ""
 
-    def local_expansion_dims(self, nterms="nterms"):
+    def expansion_dims(self, nterms="nterms"):
         if self.dimensions == 2:
             return "0:%(nterms)s" % locals()
         elif self.dimensions == 3:
@@ -52,12 +52,17 @@ class Helmholtz(Equation):
     def in_arg_list(self):
         return "zk"
 
-    def in_arg_decls(self):
-        return """
-            ! helmholtz parameter
-            complex*16, intent(in) :: zk
-            """
-    def local_expansion_dims(self, nterms="nterms"):
+    def in_arg_decls(self, with_intent=True):
+        if with_intent:
+            return """
+                complex*16, intent(in) :: zk
+                """
+        else:
+            return """
+                complex*16 zk
+                """
+
+    def expansion_dims(self, nterms="nterms"):
         if self.dimensions == 2:
             return "-(%(nterms)s):%(nterms)s" % locals()
         elif self.dimensions == 3:

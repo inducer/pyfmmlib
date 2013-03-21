@@ -1,9 +1,11 @@
 import re
 
+# {{{ generation helpers
+
 def parse_args(args):
     args_re = re.compile(r"^\s*([a-z]+(?:\s*\*\s*[0-9]+)?)\s+(.*)\s*$")
-    array_re = re.compile(r"([a-zA-Z][a-zA-Z0-9]*)\(([-+*a-z:0-9,]+)\)")
-    scalar_re = re.compile(r"([a-zA-Z][a-zA-Z0-9]*)")
+    array_re = re.compile(r"([a-zA-Z][a-zA-Z0-9]*)\(([-+*a-z:0-9,() ]+)\)$")
+    scalar_re = re.compile(r"([a-zA-Z][a-zA-Z0-9]*)$")
 
     for line in args.split("\n"):
         if not line.strip():
@@ -14,27 +16,17 @@ def parse_args(args):
         type_str = args_match.group(1)
         names_and_shapes = args_match.group(2)
 
-        while names_and_shapes.strip():
-            array_match = array_re.match(names_and_shapes)
-            scalar_match = scalar_re.match(names_and_shapes)
-            if array_match is not None:
-                yield type_str, array_match.group(1), tuple(
-                        x.strip() for x in array_match.group(2).split(","))
-                names_and_shapes = names_and_shapes[array_match.end():]
-            elif scalar_match is not None:
-                yield type_str, scalar_match.group(1), ()
-                names_and_shapes = names_and_shapes[scalar_match.end():]
-            else:
-                raise RuntimeError("arg parsing did not understand: %s"
-                        % names_and_shapes)
+        array_match = array_re.match(names_and_shapes)
+        scalar_match = scalar_re.match(names_and_shapes)
+        if array_match is not None:
+            yield type_str, array_match.group(1), tuple(
+                    x.strip() for x in array_match.group(2).split(","))
+        elif scalar_match is not None:
+            yield type_str, scalar_match.group(1), ()
+        else:
+            raise RuntimeError("arg parsing did not understand: %s"
+                    % names_and_shapes)
 
-            names_and_shapes = names_and_shapes.strip()
-            if names_and_shapes.startswith(","):
-                names_and_shapes = names_and_shapes[1:]
-                names_and_shapes = names_and_shapes.strip()
-            else:
-                if names_and_shapes:
-                    raise RuntimeError("comma expected")
 
 
 
@@ -129,12 +121,18 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     yield "end"
     yield ""
 
+# }}}
+
 def gen_vector_wrappers():
     result = []
 
     def gen_vector_wrapper(*args, **kwargs):
         for line in get_vector_wrapper(*args, **kwargs):
             result.append(line)
+
+    import codegen_helpers as cgh
+
+    # {{{ helpers
 
     gen_vector_wrapper("triangle_norm", """
             real*8 triangles(3,3,nvcount)
@@ -146,10 +144,34 @@ def gen_vector_wrappers():
             real*8 triarea(nvcount)
             """, ["triarea"])
 
+    # }}}
+
+    # {{{ special functions
+
     gen_vector_wrapper("ylgndr", """
             integer nmax
-            real *8 x(nvcount), y(0:nmax,0:nmax,nvcount)
+            real *8 x(nvcount)
+            real *8 y(0:nmax,0:nmax,nvcount)
             """, ["y"])
+
+    gen_vector_wrapper("hank103", """
+            complex*16 z(nvcount)
+            complex*16 h0(nvcount)
+            complex*16 h1(nvcount)
+            integer ifexpon
+            """, ["h0", "h1"])
+
+    gen_vector_wrapper("legefder", """
+            real*8 x(nvcount)
+            real*8 val(nvcount)
+            real*8 der(nvcount)
+            real*8 pexp(n+1)
+            integer n
+            """, ["val", "der"])
+
+    # }}}
+
+    # {{{ direct evaluation
 
     for dp_or_no in ["", "_dp"]:
         for what in ["l", "h"]:
@@ -168,7 +190,7 @@ def gen_vector_wrappers():
                 if what == "l":
                     wavek_or_no = ""
                 else:
-                    wavek_or_no = ",wavek"
+                    wavek_or_no = ",zk"
 
                 if dp_or_no:
                     charge_or_dip = "dipstr,dipvec"
@@ -178,20 +200,29 @@ def gen_vector_wrappers():
                 gen_vector_wrapper("%(what)spot%(fld_or_grad)s%(dims)ddall%(dp_or_no)s" 
                         % locals(), 
                         """
-                      integer if%(fld_or_grad)s,ifhess,nsources
-                      real *8 sources(%(dims)d,nsources),targets(%(dims)d,nvcount)
+                      integer if%(fld_or_grad)s
+                      integer ifhess
+                      integer nsources
+                      real *8 sources(%(dims)d,nsources)
+                      real *8 targets(%(dims)d,nvcount)
                       complex *16 charge(nsources)
                       complex *16 dipstr(nsources)
                       real*8 dipvec(%(dims)d,nsources)
-                      complex *16 wavek,pot(nvcount),%(fld_or_grad)s(%(dims)d,nvcount)
+                      complex *16 zk
+                      complex *16 pot(nvcount)
+                      complex *16 %(fld_or_grad)s(%(dims)d,nvcount)
                       complex *16 hess(%(hess_dims)d,nvcount)
                       """ % locals(), ["pot", fld_or_grad, "hess"], 
                       arg_order=("if%(fld_or_grad)s%(ifhess_or_no)s,sources,%(charge_or_dip)s,nsources,targets%(wavek_or_no)s,"
                           "pot,%(fld_or_grad)s%(hess_or_no)s")
                       % locals(), too_many_ok=True)
 
+    # }}}
+
+    # {{{ {ta,mp}eval
+
     gen_vector_wrapper("h3dtaeval", """
-            complex*16 wavek
+            complex*16 zk
             real*8 rscale
             real*8 center(3)
             complex*16 locexp(0:nterms,-nterms:nterms)
@@ -205,7 +236,7 @@ def gen_vector_wrappers():
 
     for what, extra_args in [
             ("l", ""),
-            ("h", "complex*16 wavek")
+            ("h", "complex*16 zk")
             ]:
         for expn_type in ["ta", "mp"]:
             gen_vector_wrapper("%s2d%seval" % (what, expn_type), """
@@ -249,18 +280,37 @@ def gen_vector_wrappers():
                 """ % (extra_args, hess_output), taeval_out_args,
                 vec_func_name=taeval_func_name+"_1tgtperexp")
 
+    # }}}
 
-    gen_vector_wrapper("hank103", """
-            complex*16 z(nvcount), h0(nvcount), h1(nvcount)
-            integer ifexpon
-            """, ["h0", "h1"])
+    # {{{ translation operators
 
-    gen_vector_wrapper("legefder", """
-            real*8 x(nvcount)
-            real*8 val(nvcount)
-            real*8 der(nvcount)
-            real*8 pexp(n+1)
-            integer n
-            """, ["val", "der"])
+    for dims in [2]:
+        for eqn in [cgh.Laplace(dims), cgh.Helmholtz(dims)]:
+            for xlat in ["mpmp", "mploc", "locloc"]:
+                func_name = "%s%dd%s" % (eqn.lh_letter(), dims, xlat)
+
+                gen_vector_wrapper(func_name, """
+                    %(extra_args)s
+
+                    real*8 rscale1(nvcount)
+                    real*8 center1(%(dims)d, nvcount)
+                    complex*16 expn1(%(expn_dims_1)s, nvcount)
+                    integer nterms1
+
+                    real*8 rscale2(nvcount)
+                    real*8 center2(%(dims)d, nvcount)
+                    complex*16 expn2(%(expn_dims_2)s, nvcount)
+                    integer nterms2
+                    """ % dict(
+                        dims=dims,
+                        expn_dims_1=eqn.expansion_dims("nterms1"),
+                        expn_dims_2=eqn.expansion_dims("nterms2"),
+                        extra_args=eqn.in_arg_decls(with_intent=False),
+                        ),
+                    ["expn2"])
+
+    # }}}
 
     return "\n".join(result)
+
+# vim: foldmethod=marker

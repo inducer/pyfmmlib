@@ -3,6 +3,8 @@
 ! If it is .pyf, you are editing a generated file, and your changes will be
 ! overwritten.
 
+<%! import codegen_helpers as cgh %>
+
 python module _internal
   interface
       subroutine jfuns2d(ier,nterms,z,scale,fjs,ifder,fjder, &
@@ -20,48 +22,7 @@ python module _internal
         complex*16, intent(out) :: ntop
     end subroutine
 
-    ! {{{ form{mp,ta} entrypoints
-
-    % for dp_or_no in ["", "_dp"]:
-      % for what in ["l", "h"]:
-        % for dims in [2, 3]:
-          % for expn_type in ["mp", "ta"]:
-            subroutine ${what}${dims}dform${expn_type}${dp_or_no}(ier, &
-              % if what == "h":
-                zk, &
-              %endif
-              rscale,source, &
-              % if dp_or_no and not (what=="l" and dims == 2):
-                dipstr,  dipvec, &
-              % else:
-                charge, &
-              % endif
-              ns, center, &
-              nterms,expn)
-                intent(in) rscale,sources,charge,ns,center,nterms
-                intent(out) ier,expn
-
-                implicit real *8 (a-h,o-z)
-                complex *16 zk,charge(ns)
-                dimension center(${dims}),source(${dims},ns),zdiff(${dims})
-                real *8 dipvec(${dims},ns)
-                complex *16 dipstr(ns)
-                % if dims == 2:
-                  % if what == "l":
-                    complex*16 expn(0:nterms)
-                  % else:
-                    complex*16 expn(-nterms:nterms)
-                  % endif
-                % else:
-                  complex*16 expn(0:nterms,-nterms:nterms)
-                % endif
-            end subroutine
-          % endfor
-        % endfor
-      % endfor
-    % endfor
-
-    ! }}}
+    ! {{{ special functions
 
     subroutine legeexps(itype,n,x,u,v,whts)
       integer, intent(in) :: itype, n
@@ -75,9 +36,42 @@ python module _internal
       intent(in) x, pexp, n
     end subroutine
 
-    ! {{{ fmm entrypoints
+    ! }}}
 
-    <%! import codegen_helpers as cgh %>
+    ! {{{ form{mp,ta} entrypoints
+
+    % for dp_or_no in ["", "_dp"]:
+      % for dims in [2, 3]:
+        % for eqn in [cgh.Laplace(dims), cgh.Helmholtz(dims)]:
+          % for expn_type in ["mp", "ta"]:
+            subroutine ${eqn.lh_letter()}${dims}dform${expn_type}${dp_or_no}( &
+              ier, ${eqn.in_arg_list()|cpost} &
+              rscale, source, &
+              % if dp_or_no and not (eqn.lh_letter()=="l" and dims == 2):
+                dipstr,  dipvec, &
+              % else:
+                charge, &
+              % endif
+              ns, center, nterms,expn)
+                intent(in) rscale,sources,charge,ns,center,nterms
+                intent(out) ier,expn
+
+                implicit real *8 (a-h,o-z)
+                complex *16 zk,charge(ns)
+                dimension center(${dims}),source(${dims},ns),zdiff(${dims})
+                real *8 dipvec(${dims},ns)
+                complex *16 dipstr(ns)
+
+                complex*16 expn(${eqn.expansion_dims()})
+            end subroutine
+          % endfor
+        % endfor
+      % endfor
+    % endfor
+
+    ! }}}
+
+    ! {{{ fmm entrypoints
 
     % for dim in [2, 3]:
     % for eqn in [cgh.Laplace(dim), cgh.Helmholtz(dim)]:
