@@ -103,8 +103,6 @@ python module _internal
 
         <%
 
-        have_dipvec = not (eqn.lh_letter() == "l" and dim == 2)
-
         suffix = "targ"
 
         has_hess = not (dim == 3) and not iter
@@ -127,9 +125,7 @@ python module _internal
                     triaflat, trianorm, source, &
                 % endif
                 ifcharge, charge, ifdipole, dipstr, &
-                % if have_dipvec:
-                    dipvec, &
-                % endif
+                dipvec, &
                 ifpot, pot, iffld, fld, &
                 % if has_hess:
                     ifhess, hess, &
@@ -162,9 +158,7 @@ python module _internal
 
             integer, intent(in) :: ifdipole
             complex*16, intent(in) :: dipstr(nsource)
-            % if have_dipvec:
-              real*8, intent(in) :: dipvec(${dim},nsource)
-            % endif
+            real*8, intent(in) :: dipvec(${dim},nsource)
 
             integer, intent(in) :: ifpot
             complex*16, intent(out) :: pot(nsource)
@@ -194,6 +188,8 @@ python module _internal
             % endif
 
             required ntarget
+            ! Dear f2py, we do our own checking of ntarget, thank you very much.
+            check(1) ntarget
 
             check((!ifpottarg && !iffldtarg) || (shape(target,0)==${dim} && shape(target,1) == ntarget))  target
             check((!ifpottarg) || (shape(pottarg,0)==ntarget))  pottarg

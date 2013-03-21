@@ -36,21 +36,38 @@ def generate_wrappers():
 
 # }}}
 
+def count_down_delay(delay):
+    from time import sleep
+    import sys
+    while delay:
+        sys.stdout.write("Continuing in %d seconds...   \r" % delay)
+        sys.stdout.flush()
+        delay -= 1
+        sleep(1)
+    print("")
+
 def main():
     generate_wrappers()
 
-    import glob
+    # looks pointless, but allows 'python setup.py develop'--do not remove
     import setuptools
+
     from numpy.distutils.core import Extension, setup
 
     from os.path import exists
     if not exists("fmmlib2d") or not exists("fmmlib3d"):
-        print("------------------------------------------------------------")
+        print("----------------------------------------------------------------")
         print("Missing fmmlib sources")
-        print("------------------------------------------------------------")
-        print("You probably need to run ./grab-sources.sh.")
-        print("------------------------------------------------------------")
-        return
+        print("----------------------------------------------------------------")
+        print("These can be downloaded by running ./grab-sources.sh.")
+        print("Note that this will fail on Windows--it's a shell script.")
+        print("----------------------------------------------------------------")
+        print("I will try to do that after a short delay, unless you stop me.")
+        print("----------------------------------------------------------------")
+        count_down_delay(delay=10)
+
+        from subprocess import check_call
+        check_call(["./grab-sources.sh"])
 
     from os.path import basename
     from glob import glob
@@ -66,6 +83,11 @@ def main():
         source_files[bn] = f
 
     source_files = ["wrappers.pyf", "vec_wrappers.f90"] + list(source_files.values())
+
+    import os
+    extra_link_args = os.environ.get("EXTRA_LINK_ARGS", "").split()
+    if extra_link_args == [""]:
+        extra_link_args = []
 
     conf = {}
     execfile("pyfmmlib/version.py", conf)
@@ -92,10 +114,14 @@ def main():
             ],
 
           packages = [ "pyfmmlib" ],
+          install_requires=[
+              "pytest>=2",
+              ],
           ext_modules = [
             Extension(
               "pyfmmlib._internal",
               source_files,
+              extra_link_args=extra_link_args,
               ),
             ]
          )

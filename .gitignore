@@ -9,3 +9,4 @@ vec_wrappers.f90
 *.egg-info
 build
 *.so
+dist

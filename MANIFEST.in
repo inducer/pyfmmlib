@@ -3,6 +3,7 @@ include codegen_helpers.py
 include grab-sources.sh
 include vec_wrappers.py
 include wrappers.pyf.mako
+include setup-optimized.sh
 
 include examples/*.py
 include test/*.py

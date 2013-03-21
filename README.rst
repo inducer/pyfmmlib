@@ -20,20 +20,18 @@ Installation
 To build this, you need
 
 * `numpy <http://numpy.org>`_
-* `mako <http://makotemplates.org>`_ (`pip <https://pypi.python.org/pypi/pip>`_ install mako` or `ez_install mako`)
+* `mako <http://makotemplates.org>`_ (`pip <https://pypi.python.org/pypi/pip>`_ install mako or `ez_install mako`)
 
-Type::
-
-    ./grab-sources.sh
-
-This will download and unpack the fmmlib sources somewhere below here where the
-build expects them to be.
-
-Then run::
+Run::
 
     python setup.py install
 
 as usual and cross your fingers.
+
+If you'd like (rather effective) go-fast stripes,
+on GNU platforms, use this::
+
+    ./setup-optimized.sh install
 
 Documentation
 -------------

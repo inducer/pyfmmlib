@@ -8,7 +8,7 @@ function download_unpack_zip_if_not_there
   UNVERSIONED_DIRNAME="${DIRNAME%-[0-9].*}"
 
   if ! test -f $BASENAME; then
-    wget $URL
+    wget $URL || curl -O $URL
   fi
   if ! test -d $UNVERSIONED_DIRNAME; then
     unzip $BASENAME

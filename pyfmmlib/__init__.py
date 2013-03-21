@@ -131,7 +131,7 @@ def normalize_kernel(kernel):
 def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
         slp_density=None, dlp_density=None,
         target=None, dipvec=None, force_hess=False,
-        mesh=None):
+        mesh=None, debug=False):
     """Internal routine, do not call directly."""
 
     if dimensions == 3:
@@ -170,6 +170,8 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
 
     if dlp_density is not None:
         ifdipole = 1
+        if dipvec is None:
+            raise TypeError("must specify dipvec if requesting dipole density")
     else:
         ifdipole = 0
         dlp_density = np.empty(size)
@@ -190,12 +192,12 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
             dipvec_new[:] = dipvec[:, np.newaxis]
 
         dipvec = dipvec_new
+    else:
+        dipvec = dipvec.T
 
     use_hessian_codepath = force_hess or "h" in what.lower()
 
     if dimensions == 2:
-        use_hessian_codepath = True
-    if dimensions == 3 and kernel.letter == "l":
         use_hessian_codepath = True
 
     ifcharge *= kernel.flag_value
@@ -227,12 +229,14 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
                 "P" in what, pottarg,
                 "G" in what, fldtarg.T]
 
-        suffix = "targ"
+        routine_name = "%sfmm%dd%starg" % (kernel.letter, dimensions, kind)
 
-        routine_name = "%sfmm%dd%s%s" % (kernel.letter, dimensions, kind, suffix)
-
+        if debug:
+            print "ENTER", routine_name
         ier, pot, fld, pottarg, fldtarg = \
             getattr(_int, routine_name)(*args)
+        if debug:
+            print "LEAVE", routine_name
 
         result_dict = {
                 "p": lambda: kernel_scale*pot,
@@ -243,7 +247,7 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
 
         # }}}
     else:
-        # {{{ with Hessians and/or second derivatives or 2D
+        # {{{ with Hessians
 
         # {{{ process kernel argument
 
@@ -251,8 +255,6 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
             raise RuntimeError("unsupported kernel: %s" % kernel)
 
         # }}}
-
-        suffix = "targ"
 
         hessian_components = {2: 3, 3: 6}
         hesstarg = np.zeros(
@@ -264,13 +266,10 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
         else:
             hess_str = ""
 
-        routine_name = "%sfmm%dd%s%s%s" % (kernel.letter, dimensions, kind, hess_str, suffix)
+        routine_name = "%sfmm%dd%s%starg" % (kernel.letter, dimensions, kind, hess_str)
         args = [iprec] + list(kernel.k_arg) + source_args + [
                 ifcharge, slp_density,
-                ifdipole, dlp_density,]
-
-        if dimensions == 3 or not isinstance(kernel, LaplaceKernel):
-            args.append(dipvec)
+                ifdipole, dlp_density, dipvec]
 
         args = args + [
                 "p" in what, "g" in what, "h" in what, ntarget, target.T,
@@ -279,8 +278,12 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
                 "H" in what, hesstarg.T,
                 ]
 
+        if debug:
+            print "ENTER", routine_name
         ier,pot,fld,hess,pottarg,fldtarg,hesstarg = \
                 getattr(_int, routine_name)(*args)
+        if debug:
+            print "LEAVE", routine_name
 
         result_dict = {
                 "p": lambda: kernel_scale*pot,
@@ -309,7 +312,7 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
 
 
 def fmm_part(what, iprec, kernel, sources, mop_charge=None, dip_charge=None,
-        target=None, dipvec=None):
+        target=None, dipvec=None, **kwargs):
     """
     :param what: a string consisting of the following characters, all optional:
         p : compute potential at source
@@ -326,13 +329,14 @@ def fmm_part(what, iprec, kernel, sources, mop_charge=None, dip_charge=None,
 
     _, dimensions = sources.shape
     return _fmm(dimensions, len(sources), "part", [sources.T,],
-            what, iprec, kernel, mop_charge, dip_charge, target, dipvec)
+            what, iprec, kernel, mop_charge, dip_charge, target, dipvec,
+            **kwargs)
 
 
 
 
 def fmm_tria(what, iprec, kernel, mesh, slp_density=None, dlp_density=None,
-        target=None, dipvec=None, cache_dict=None):
+        target=None, dipvec=None, **kwargs):
     """
     :param what: a string consisting of the following characters, all optional:
         p : compute potential at source
@@ -358,7 +362,7 @@ def fmm_tria(what, iprec, kernel, mesh, slp_density=None, dlp_density=None,
     return _fmm(dimensions, len(mesh), "tria",
             [mesh.triangles.T, mesh.normals.T, mesh.centroids.T],
             what, iprec, kernel, slp_density, dlp_density, target, dipvec,
-            force_hess=force_hess, cache_dict=cache_dict, mesh=mesh)
+            force_hess=force_hess, mesh=mesh, **kwargs)
 
 
 
