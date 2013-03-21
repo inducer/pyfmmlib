@@ -58,8 +58,36 @@ Not much, unfortunately. Here's what I do to figure out how to use stuff::
       der : float
 
 This tells you how to call the function from Python.
-You can then use grep to fish out the right Fortran source, look at the docs
-there, and you're in business. Crude, but effective.
+You can then use grep to fish out the right Fortran source::
+
+    $ grep -icl 'legefder' fmmlib*/*/*.f
+    fmmlib3d/src/legeexps.f
+
+Then look at the docs there, and you're in business. No idea what
+function name to look for? Just use the same grep procedure to look
+for keywords.
+
+Crude, but effective. :)
+
+Two more things:
+
+* Some functions are wrapped with a `_vec` suffix. This means they
+  apply to whole vectors of arguments at once. They're also parallel
+  via OpenMP.
+
+* `pyfmmlib.fmm_part` and `pyfmmlib.fmm_tria` are (dimension-independent)
+  wrappers that make the calling sequence for the FMMs just a wee bit less
+  obnoxious.  See `examples/fmm.py` for more.
+
+  Here's a rough idea how these are called::
+
+      from pyfmmlib import fmm_part, HelmholtzKernel
+
+      pot, grad = fmm_part("PG", iprec=2, kernel=HelmholtzKernel(5),
+              sources=sources, mop_charge=1, target=targets)
+
+  Unlike the rest of the library (which calls directly into Fortran),
+  these routines expect `(n,3)`-shaped (that is, C-Order) arrays.
 
 License
 -------
