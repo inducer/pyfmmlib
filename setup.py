@@ -3,6 +3,8 @@
 import distribute_setup
 distribute_setup.use_setuptools()
 
+GENERATED_SOURCES = ["wrappers.pyf", "vec_wrappers.f90"]
+
 # {{{ wrapper generation
 
 def cpre(s):
@@ -47,7 +49,41 @@ def count_down_delay(delay):
     print("")
 
 def main():
-    generate_wrappers()
+    try:
+        import mako
+    except ImportError:
+        print("----------------------------------------------------------------------------")
+        print("Mako is not installed.")
+        print("----------------------------------------------------------------------------")
+
+        from os.path import exists
+        if all(exists(s) for s in GENERATED_SOURCES):
+            print("pyfmmlib uses mako [1] to generate its wrappers.")
+            print("All the generated files are there, so we'll continue.")
+            print("----------------------------------------------------------------------------")
+            print("Hit Ctrl-C now if you'd like to think about the situation.")
+            print("----------------------------------------------------------------------------")
+
+            count_down_delay(delay=5)
+
+        else:
+            print("That is a problem because pyfmmlib uses mako [1] to generate its wrappers.")
+            print("Try typing")
+            print("")
+            print("  pip install mako")
+            print("")
+            print("or")
+            print("  ez_install mako")
+            print("")
+            print("That should install it. If that doesn't work, go to the mako website,")
+            print("download, and install by calling 'python setup.py install'.")
+            print("")
+            print("[1] http://www.makotemplates.org/")
+            print("----------------------------------------------------------------------------")
+            import sys
+            sys.exit(1)
+    else:
+        generate_wrappers()
 
     # looks pointless, but allows 'python setup.py develop'--do not remove
     import setuptools
@@ -82,7 +118,7 @@ def main():
 
         source_files[bn] = f
 
-    source_files = ["wrappers.pyf", "vec_wrappers.f90"] + list(source_files.values())
+    source_files = GENERATED_SOURCES + list(source_files.values())
 
     import os
     extra_link_args = os.environ.get("EXTRA_LINK_ARGS", "").split()
