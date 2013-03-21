@@ -5,7 +5,7 @@ pyfmmlib is a Python wrapper for `fmmlib2d
 <https://cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html>`_ and `fmmlib3d
 <https://cims.nyu.edu/cmcl/fmm3dlib/fmm3dlib.html>`_ implementations of the
 fast multipole method for Laplace and Helmholtz potentials by Zydrunas Gimbutas
-and Leslie Greengard.
+and Leslie Greengard (and including code by many more people).
 
 This wrapper is far from comprehensive. It just catches the things I ended up
 needing. Nonetheless, the FMMs and a fair bit of other useful stuff is accessible.
@@ -25,7 +25,7 @@ Type::
     ./grab-sources.sh
 
 This will download and unpack the fmmlib sources somewhere below here where the
-build expects it to be.
+build expects them to be.
 
 Then run::
 
@@ -42,7 +42,8 @@ Not much, unfortunately. Here's what I do to figure out how to use stuff::
     >>> dir(pyfmmlib)
     ['__builtins__', '__doc__', '__file__', '__name__', '__package__', '_add_plot', ...]
 
-    Fish the desired function from this list--let's use 'legefder', and run:
+    Fish the desired function from this list (let's use 'legefder' as an
+    example) and run:
 
     >>> print pyfmmlib.legefder.__doc__
     legefder - Function signature:

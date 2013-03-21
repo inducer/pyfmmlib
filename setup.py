@@ -27,15 +27,12 @@ def generate_wrappers():
     tmpl = Template(open(mako_name, "rt").read(), uri=mako_name, strict_undefined=True)
 
     context = dict(cpre=cpre, cpost=cpost,
-            #paren=paren,
-            #colons=colons, to_colons=to_colons, index=index,
-            #var_dim=var_dim, gen_indices=gen_indices,
-            #global_state=global_state, use_modules=options.use_modules,
-            #debug_verbosity=options.debug_verbosity
             gen_vector_wrappers=gen_vector_wrappers
             )
     result = tmpl.render(**context)
     open("wrappers.pyf", "wt").write(result)
+
+    open("vec_wrappers.f90", "wt").write(gen_vector_wrappers())
 
 # }}}
 
@@ -59,7 +56,7 @@ def main():
     from glob import glob
     source_files = {}
 
-    BLACKLIST = ["d2tstrcr_omp.f"]
+    BLACKLIST = ["d2tstrcr_omp.f", "second-r8.f"]
 
     for f in glob("fmmlib2d/src/*.f") + glob("fmmlib3d/src/*.f"):
         bn = basename(f)
@@ -68,7 +65,7 @@ def main():
 
         source_files[bn] = f
 
-    source_files = ["wrappers.pyf"] + list(source_files.values())
+    source_files = ["wrappers.pyf", "vec_wrappers.f90"] + list(source_files.values())
 
     conf = {}
     execfile("pyfmmlib/version.py", conf)

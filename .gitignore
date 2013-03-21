@@ -5,5 +5,7 @@ fmmlib[23]d
 _internalmodule.c
 *.pyc
 wrappers.pyf
+vec_wrappers.f90
 *.egg-info
 build
+*.so

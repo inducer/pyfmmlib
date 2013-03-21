@@ -95,10 +95,8 @@ python module _internal
     % for kind in kinds:
 
     <%
-    if kind == "tria":
-        iter_variants = ["", "iter"]
-    else:
-        iter_variants = [""]
+    #iter_variants = ["", "iter"]
+    iter_variants = [""]
     %>
 
     % for iter in iter_variants:
@@ -109,7 +107,7 @@ python module _internal
 
         suffix = "targ"
 
-        has_hess = not (dim == 3 and eqn.lh_letter() == "h") and not iter
+        has_hess = not (dim == 3) and not iter
 
         has_hess_suffix = has_hess and (dim == 3)
 
