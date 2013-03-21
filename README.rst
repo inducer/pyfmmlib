@@ -20,7 +20,7 @@ Installation
 To build this, you need
 
 * `numpy <http://numpy.org>`_
-* `mako <http://makotemplates.org>`_ (`pip install mako`)
+* `mako <http://makotemplates.org>`_ (`pip <https://pypi.python.org/pypi/pip>`_ install mako` or `ez_install mako`)
 
 Type::
 
@@ -73,13 +73,13 @@ Crude, but effective. :)
 
 Two more things:
 
-* Some functions are wrapped with a `_vec` suffix. This means they
+* Some functions are wrapped with a ``_vec`` suffix. This means they
   apply to whole vectors of arguments at once. They're also parallel
   via OpenMP.
 
-* `pyfmmlib.fmm_part` and `pyfmmlib.fmm_tria` are (dimension-independent)
+* ``pyfmmlib.fmm_part`` and ``pyfmmlib.fmm_tria`` are (dimension-independent)
   wrappers that make the calling sequence for the FMMs just a wee bit less
-  obnoxious.  See `examples/fmm.py` for more.
+  obnoxious.  See ``examples/fmm.py`` for more.
 
   Here's a rough idea how these are called::
 
@@ -89,7 +89,7 @@ Two more things:
               sources=sources, mop_charge=1, target=targets)
 
   Unlike the rest of the library (which calls directly into Fortran),
-  these routines expect `(n,3)`-shaped (that is, C-Order) arrays.
+  these routines expect ``(n,3)``-shaped (that is, C-Order) arrays.
 
 License
 -------
