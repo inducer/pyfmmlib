@@ -10,3 +10,5 @@ vec_wrappers.f90
 build
 *.so
 dist
+distribute*.tar.gz
+distribute*.egg

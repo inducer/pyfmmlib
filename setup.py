@@ -134,7 +134,7 @@ def main():
           author="Leslie Greengard, Zydrunas Gimbutas, Andreas Kloeckner",
           author_email="inform@tiker.net",
           license = "wrapper: MIT/code: GPL2",
-          url="http://mathema.tician.de/software/pymetis",
+          url="http://github.com/inducer/pyfmmlib",
           classifiers=[
             'Development Status :: 4 - Beta',
             'Intended Audience :: Developers',
