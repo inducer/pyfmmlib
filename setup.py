@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import distribute_setup
-distribute_setup.use_setuptools()
+import ez_setup
+ez_setup.use_setuptools()
 
 GENERATED_SOURCES = ["wrappers.pyf", "vec_wrappers.f90"]
 

@@ -1,3 +1,5 @@
+include ez_setup.py
+
 include README.rst
 include codegen_helpers.py
 include grab-sources.sh
