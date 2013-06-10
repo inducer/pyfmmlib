@@ -1,40 +1,37 @@
 from __future__ import division
 import pyfmmlib._internal as _int
-from pyfmmlib._internal import *
-from pyfmmlib.version import VERSION_TEXT as __version__
+from pyfmmlib._internal import *  # noqa
+from pyfmmlib.version import VERSION_TEXT as __version__  # noqa
 
 import numpy as np
 
 
-
-
 # Map from matrix indices (i,j) in Hessian into output array of
 # FMM 'hess' return array.
+
 hessian_index_lookup = {
         3: {
             # diagonal
-            (0,0): 0,
-            (1,1): 1,
-            (2,2): 2,
+            (0, 0): 0,
+            (1, 1): 1,
+            (2, 2): 2,
 
             # off-diagonal
-            (1,0): 3,
-            (0,1): 3,
-            (2,0): 4,
-            (0,2): 4,
-            (2,1): 5,
-            (1,2): 5,
+            (1, 0): 3,
+            (0, 1): 3,
+            (2, 0): 4,
+            (0, 2): 4,
+            (2, 1): 5,
+            (1, 2): 5,
         },
 
         2: {
-            (0,0): 0,
-            (1,0): 1,
-            (0,1): 1,
-            (1,1): 2,
+            (0, 0): 0,
+            (1, 0): 1,
+            (0, 1): 1,
+            (1, 1): 2,
             }
         }
-
-
 
 
 # {{{ kernel classes
@@ -48,6 +45,7 @@ class KernelBase(object):
     def __eq__(self, other):
         return self.__class__ == other.__class__ and \
                 self.__getinitargs__() == other.__getinitargs__()
+
 
 class LaplaceKernel(KernelBase):
     letter = "l"
@@ -67,6 +65,7 @@ class LaplaceKernel(KernelBase):
 
     def evaluate(self, evaluate_func):
         return self
+
 
 class HelmholtzKernel(KernelBase):
     letter = "h"
@@ -114,6 +113,7 @@ class DifferenceKernel(KernelBase):
     def k_kwargs(self, name="zk"):
         return {name: self.k}
 
+
 def normalize_kernel(kernel):
     if not isinstance(kernel, KernelBase):
         if kernel == 0:
@@ -124,8 +124,6 @@ def normalize_kernel(kernel):
     return kernel
 
 # }}}
-
-
 
 
 def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
@@ -217,7 +215,8 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
                         "on triangles")
             #kind = "trif"
 
-        if not isinstance(kernel, (LaplaceKernel, HelmholtzKernel, DifferenceKernel)):
+        if not isinstance(kernel,
+                (LaplaceKernel, HelmholtzKernel, DifferenceKernel)):
             raise RuntimeError("unsupported kernel: %s" % kernel)
 
         # }}}
@@ -266,7 +265,8 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
         else:
             hess_str = ""
 
-        routine_name = "%sfmm%dd%s%starg" % (kernel.letter, dimensions, kind, hess_str)
+        routine_name = "%sfmm%dd%s%starg" % (
+                kernel.letter, dimensions, kind, hess_str)
         args = [iprec] + list(kernel.k_arg) + source_args + [
                 ifcharge, slp_density,
                 ifdipole, dlp_density, dipvec]
@@ -280,7 +280,7 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
 
         if debug:
             print "ENTER", routine_name
-        ier,pot,fld,hess,pottarg,fldtarg,hesstarg = \
+        ier, pot, fld, hess, pottarg, fldtarg, hesstarg = \
                 getattr(_int, routine_name)(*args)
         if debug:
             print "LEAVE", routine_name
@@ -309,8 +309,6 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
         return result
 
 
-
-
 def fmm_part(what, iprec, kernel, sources, mop_charge=None, dip_charge=None,
         target=None, dipvec=None, **kwargs):
     """
@@ -328,11 +326,9 @@ def fmm_part(what, iprec, kernel, sources, mop_charge=None, dip_charge=None,
     """
 
     _, dimensions = sources.shape
-    return _fmm(dimensions, len(sources), "part", [sources.T,],
+    return _fmm(dimensions, len(sources), "part", [sources.T],
             what, iprec, kernel, mop_charge, dip_charge, target, dipvec,
             **kwargs)
-
-
 
 
 def fmm_tria(what, iprec, kernel, mesh, slp_density=None, dlp_density=None,
@@ -348,9 +344,9 @@ def fmm_tria(what, iprec, kernel, mesh, slp_density=None, dlp_density=None,
 
         Results will be returned in the same order as given in *what*.
     :param mesh: an object expected to have attributes `triangles`, `normals`
-        and `centroids`. `triangles` is a `(n,3,3)`-shape array with triangle vertices.
-        `normals` is a `(n,3)`-shape array with normals, and `centroids is a
-        `(n,3)`-shape array with centroids.
+        and `centroids`. `triangles` is a `(n,3,3)`-shape array with triangle
+        vertices.  `normals` is a `(n,3)`-shape array with normals, and
+        `centroids is a `(n,3)`-shape array with centroids.
     """
     force_hess = dipvec is not None
 
@@ -363,8 +359,6 @@ def fmm_tria(what, iprec, kernel, mesh, slp_density=None, dlp_density=None,
             [mesh.triangles.T, mesh.normals.T, mesh.centroids.T],
             what, iprec, kernel, slp_density, dlp_density, target, dipvec,
             force_hess=force_hess, mesh=mesh, **kwargs)
-
-
 
 
 # vim: foldmethod=marker
