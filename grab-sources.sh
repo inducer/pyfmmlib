@@ -1,5 +1,7 @@
 #! /bin/bash
 
+set -e
+
 function download_unpack_zip_if_not_there
 {
   URL="$1"
