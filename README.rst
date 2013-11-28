@@ -14,6 +14,9 @@ needing. Nonetheless, the FMMs and a fair bit of other useful stuff is accessibl
 
 - Andreas Kloeckner <inform@tiker.net>
 
+.. image:: https://badge.fury.io/py/pyfmmlib.png
+    :target: http://pypi.python.org/pypi/pyfmmlib
+
 Installation
 ------------
 
