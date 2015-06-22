@@ -97,21 +97,6 @@ def main():
 
     from numpy.distutils.core import Extension, setup
 
-    from os.path import exists
-    if not exists("fmmlib2d") or not exists("fmmlib3d"):
-        print(DASH_SEPARATOR)
-        print("Missing fmmlib sources")
-        print(DASH_SEPARATOR)
-        print("These can be downloaded by running ./grab-sources.sh.")
-        print("Note that this will fail on Windows--it's a shell script.")
-        print(DASH_SEPARATOR)
-        print("I will try to do that after a short delay, unless you stop me.")
-        print(DASH_SEPARATOR)
-        count_down_delay(delay=10)
-
-        from subprocess import check_call
-        check_call(["./grab-sources.sh"])
-
     from os.path import basename
     from glob import glob
     source_files = {}

@@ -1,0 +1,6 @@
+[submodule "fmmlib2d"]
+	path = fmmlib2d
+	url = https://github.com/zgimbutas/fmmlib2d
+[submodule "fmmlib3d"]
+	path = fmmlib3d
+	url = https://github.com/zgimbutas/fmmlib3d
