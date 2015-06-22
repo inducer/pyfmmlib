@@ -11,5 +11,10 @@ include vec_wrappers.f90
 include examples/*.py
 include test/*.py
 
-prune fmmlib2d
-prune fmmlib3d
+include fmmlib2d/COPYING
+include fmmlib2d/README
+include fmmlib2d/src/*.f
+
+include fmmlib3d/COPYING
+include fmmlib3d/README
+include fmmlib3d/src/*.f

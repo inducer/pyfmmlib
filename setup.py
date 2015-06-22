@@ -116,7 +116,7 @@ def main():
     from glob import glob
     source_files = {}
 
-    BLACKLIST = ["d2tstrcr_omp.f", "second-r8.f"]
+    BLACKLIST = ["d2tstrcr_omp.f", "second-r8.f"]  # noqa
 
     for f in glob("fmmlib2d/src/*.f") + glob("fmmlib3d/src/*.f"):
         bn = basename(f)
