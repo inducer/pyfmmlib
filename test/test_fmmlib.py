@@ -64,7 +64,7 @@ def test_translations():
     mp2_value, _, _ = h2dmpeval_vec(zk, rscale, mp2_center, mp2, ztarg=targets.T,
             ifgrad=False, ifhess=False)
 
-    assert la.norm(mp2_value - ref_value) / la.norm(ref_value) < 1e-5
+    assert la.norm(mp2_value - ref_value) / la.norm(ref_value) < 3e-5
 
     # }}}
 
@@ -100,8 +100,5 @@ if __name__ == "__main__":
     else:
         from py.test.cmdline import main
         main([__file__])
-
-
-
 
 # vim: fdm=marker
