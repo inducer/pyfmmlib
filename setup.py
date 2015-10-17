@@ -117,10 +117,17 @@ def main():
     if extra_link_args == [""]:
         extra_link_args = []
 
-    conf = {}
-    execfile("pyfmmlib/version.py", conf)
+    ver_dic = {}
+    version_file = open("pyfmmlib/version.py")
+    try:
+        version_file_contents = version_file.read()
+    finally:
+        version_file.close()
+
+    exec(compile(version_file_contents, "pyfmmlib/version.py", 'exec'), ver_dic)
+
     setup(name="pyfmmlib",
-          version=conf["VERSION_TEXT"],
+          version=ver_dic["VERSION_TEXT"],
           description="Python wrappers for particle FMMs",
           long_description=open("README.rst", "rt").read(),
           author="Leslie Greengard, Zydrunas Gimbutas, Andreas Kloeckner",
