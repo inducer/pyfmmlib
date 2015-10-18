@@ -61,8 +61,14 @@ def main():
         print("Mako is not installed.")
         print(DASH_SEPARATOR)
 
+        all_gen_exist = True
         from os.path import exists
-        if all(exists(s) for s in GENERATED_SOURCES):
+        for s in GENERATED_SOURCES:
+            if not exists(s):
+                all_gen_exist = False
+                break
+
+        if all_gen_exist:
             print("pyfmmlib uses mako [1] to generate its wrappers.")
             print("All the generated files are there, so we'll continue.")
             print(DASH_SEPARATOR)
