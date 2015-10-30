@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import division, print_function
 import pyfmmlib._internal as _int
 from pyfmmlib._internal import *  # noqa
 from pyfmmlib.version import VERSION_TEXT as __version__  # noqa
@@ -231,11 +231,11 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
         routine_name = "%sfmm%dd%starg" % (kernel.letter, dimensions, kind)
 
         if debug:
-            print "ENTER", routine_name
+            print("ENTER", routine_name)
         ier, pot, fld, pottarg, fldtarg = \
             getattr(_int, routine_name)(*args)
         if debug:
-            print "LEAVE", routine_name
+            print("LEAVE", routine_name)
 
         result_dict = {
                 "p": lambda: kernel_scale*pot,
@@ -279,11 +279,11 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
                 ]
 
         if debug:
-            print "ENTER", routine_name
+            print("ENTER", routine_name)
         ier, pot, fld, hess, pottarg, fldtarg, hesstarg = \
                 getattr(_int, routine_name)(*args)
         if debug:
-            print "LEAVE", routine_name
+            print("LEAVE", routine_name)
 
         result_dict = {
                 "p": lambda: kernel_scale*pot,
