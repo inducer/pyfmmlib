@@ -221,10 +221,28 @@ python module _internal
         complex *16, intent(in) :: mpole(0:nterms,-nterms:nterms)
         complex *16, intent(out) :: pot,fld(3),hess(6)
         integer, intent(out) :: ier
-    end subroutine
+    end subroutine l3dtaevalhess
+
+    ! {{{ term estimation
+
+    subroutine l2dterms(eps,nterms,ier)
+        ! implicit real *8 (a-h,o-z)
+        real*8, intent(in) :: eps
+        integer, intent(out) :: nterms
+        integer, intent(out) :: ier
+    end subroutine l2dterms
+    
+    subroutine h2dterms(size,zk,eps,nterms,ier)
+        ! implicit real *8 (a-h,o-z)
+        real*8, intent(in) :: size
+        complex*16, intent(in) :: zk
+        real*8, intent(in) :: eps
+        integer, intent(out) :: nterms
+        integer, intent(out) :: ier
+    end subroutine h2dterms
 
     ! }}}
-
+    
     ! {{{ generated vectorized wrappers
 
     ${gen_vector_wrappers()}
