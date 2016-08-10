@@ -11,3 +11,5 @@ build
 dist
 distribute*.tar.gz
 distribute*.egg
+
+.cache
