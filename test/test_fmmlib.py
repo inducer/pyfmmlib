@@ -88,7 +88,7 @@ def test_translations():
     loc2_value, _, _ = h2dtaeval_vec(zk, rscale, loc2_center, loc2, ztarg=targets.T,
             ifgrad=False, ifhess=False)
 
-    assert la.norm(loc2_value - ref_value) / la.norm(ref_value) < 1e-5
+    assert la.norm(loc2_value - ref_value) / la.norm(ref_value) < 1e-4
 
     # }}}
 
