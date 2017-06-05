@@ -1,5 +1,10 @@
 import re
-import six
+import sys
+
+if sys.version_info < (3,):
+    string_types = basestring  # noqa
+else:
+    string_types = str
 
 
 # {{{ generation helpers
@@ -35,11 +40,11 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     if vec_func_name is None:
         vec_func_name = func_name+"_vec"
 
-    if isinstance(args, six.string_types):
+    if isinstance(args, string_types):
         args = list(parse_args(args))
 
     if arg_order is not None:
-        if isinstance(arg_order, six.string_types):
+        if isinstance(arg_order, string_types):
             arg_order = [x.strip() for x in arg_order.split(",")]
 
         arg_dict = dict((name, (type_, shape))
