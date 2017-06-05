@@ -1,4 +1,5 @@
 import re
+import six
 
 
 # {{{ generation helpers
@@ -34,11 +35,11 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     if vec_func_name is None:
         vec_func_name = func_name+"_vec"
 
-    if isinstance(args, str):
+    if isinstance(args, six.string_types):
         args = list(parse_args(args))
 
     if arg_order is not None:
-        if isinstance(arg_order, str):
+        if isinstance(arg_order, six.string_types):
             arg_order = [x.strip() for x in arg_order.split(",")]
 
         arg_dict = dict((name, (type_, shape))
