@@ -36,6 +36,13 @@ python module _internal
       intent(in) x, pexp, n
     end subroutine
 
+    subroutine legewhts(n,ts,whts,ifwhts)
+      implicit real *8 (a-h,o-z)
+      intent(in) n, ifwhts
+      intent(out) ts, whts
+      dimension ts(1),whts(1)
+    end subroutine
+
     ! }}}
 
     ! {{{ form{mp,ta} entrypoints
