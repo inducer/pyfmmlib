@@ -40,7 +40,7 @@ python module _internal
       implicit real *8 (a-h,o-z)
       intent(in) n, ifwhts
       intent(out) ts, whts
-      dimension ts(1),whts(1)
+      dimension ts(n),whts(n)
     end subroutine
 
     ! }}}
