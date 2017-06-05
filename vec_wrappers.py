@@ -1,5 +1,6 @@
 import re
 
+
 # {{{ generation helpers
 
 def parse_args(args):
@@ -28,9 +29,6 @@ def parse_args(args):
                     % names_and_shapes)
 
 
-
-
-
 def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
         arg_order=None, too_many_ok=False):
     if vec_func_name is None:
@@ -57,8 +55,8 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     all_args = set(name for type_, name, shape in args)
     in_args = all_args-set(out_args)
 
-    yield "subroutine %s(%s, nvcount)" % (
-            vec_func_name, ", ".join(name for type_, name, shape in args))
+    yield "subroutine %s( &" % vec_func_name
+    yield "%s, nvcount)" % (", ".join(name for type_, name, shape in args))
 
     yield "  implicit none"
     yield "  integer, intent(in) :: nvcount"
@@ -71,7 +69,6 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
                     type_, intent, name, ",".join(str(si) for si in shape))
         else:
             yield "  %s, intent(%s) :: %s" % (type_, intent, name)
-
 
     # assemble call_args
     call_args = []
@@ -122,6 +119,7 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     yield ""
 
 # }}}
+
 
 def gen_vector_wrappers():
     result = []
@@ -175,7 +173,7 @@ def gen_vector_wrappers():
 
     for dp_or_no in ["", "_dp"]:
         for what in ["l", "h"]:
-            for dims in [2,3]:
+            for dims in [2, 3]:
                 if dims == 2:
                     fld_or_grad = "grad"
                     hess_dims = 3
@@ -197,8 +195,8 @@ def gen_vector_wrappers():
                 else:
                     charge_or_dip = "charge"
 
-                gen_vector_wrapper("%(what)spot%(fld_or_grad)s%(dims)ddall%(dp_or_no)s" 
-                        % locals(), 
+                gen_vector_wrapper("%(what)spot%(fld_or_grad)s%(dims)ddall%(dp_or_no)s"
+                        % locals(),
                         """
                       integer if%(fld_or_grad)s
                       integer ifhess
@@ -212,7 +210,7 @@ def gen_vector_wrappers():
                       complex *16 pot(nvcount)
                       complex *16 %(fld_or_grad)s(%(dims)d,nvcount)
                       complex *16 hess(%(hess_dims)d,nvcount)
-                      """ % locals(), ["pot", fld_or_grad, "hess"], 
+                      """ % locals(), ["pot", fld_or_grad, "hess"],
                       arg_order=("if%(fld_or_grad)s%(ifhess_or_no)s,sources,%(charge_or_dip)s,nsources,targets%(wavek_or_no)s,"
                           "pot,%(fld_or_grad)s%(hess_or_no)s")
                       % locals(), too_many_ok=True)
@@ -221,18 +219,19 @@ def gen_vector_wrappers():
 
     # {{{ {ta,mp}eval
 
-    gen_vector_wrapper("h3dtaeval", """
-            complex*16 zk
-            real*8 rscale
-            real*8 center(3)
-            complex*16 locexp(0:nterms,-nterms:nterms)
-            integer nterms
-            real*8 ztarg(3,nvcount)
-            complex*16 pot(nvcount)
-            integer iffld
-            complex*16 fld(3,nvcount)
-            integer ier(nvcount)
-            """, ["ier", "pot", "fld"])
+    for expn_type in ["ta", "mp"]:
+        gen_vector_wrapper("h3d%seval" % expn_type, """
+                complex*16 zk
+                real*8 rscale
+                real*8 center(3)
+                complex*16 mpole(0:nterms,-nterms:nterms)
+                integer nterms
+                real*8 ztarg(3,nvcount)
+                complex*16 pot(nvcount)
+                integer iffld
+                complex*16 fld(3,nvcount)
+                integer ier(nvcount)
+                """, ["ier", "pot", "fld"])
 
     for what, extra_args in [
             ("l", ""),
@@ -284,30 +283,49 @@ def gen_vector_wrappers():
 
     # {{{ translation operators
 
-    for dims in [2]:
+    from mako.template import Template
+
+    for dims in [2, 3]:
         for eqn in [cgh.Laplace(dims), cgh.Helmholtz(dims)]:
+            if eqn.lh_letter() == "l" and dims == 3:
+                continue
+
             for xlat in ["mpmp", "mploc", "locloc"]:
                 func_name = "%s%dd%s" % (eqn.lh_letter(), dims, xlat)
 
-                gen_vector_wrapper(func_name, """
-                    %(extra_args)s
+                if eqn.lh_letter() == "h" and dims == 3:
+                    func_name += "quadu"
+
+                args = Template("""
+                    ${ extra_args }
 
                     real*8 rscale1(nvcount)
-                    real*8 center1(%(dims)d, nvcount)
-                    complex*16 expn1(%(expn_dims_1)s, nvcount)
+                    real*8 center1(${dims}, nvcount)
+                    complex*16 expn1(${expn_dims_1}, nvcount)
                     integer nterms1
 
                     real*8 rscale2(nvcount)
-                    real*8 center2(%(dims)d, nvcount)
-                    complex*16 expn2(%(expn_dims_2)s, nvcount)
+                    real*8 center2(${dims}, nvcount)
+                    complex*16 expn2(${expn_dims_2}, nvcount)
                     integer nterms2
-                    """ % dict(
+
+                    %if lh_letter == "h" and dims == 3:
+                        real*8 radius(nvcount)
+                        real*8 xnodes(nquad)
+                        real*8 wts(nquad)
+                        integer nquad
+                        integer ier(nvcount)
+                    %endif
+
+                    """, strict_undefined=True).render(
+                        lh_letter=eqn.lh_letter(),
                         dims=dims,
                         expn_dims_1=eqn.expansion_dims("nterms1"),
                         expn_dims_2=eqn.expansion_dims("nterms2"),
                         extra_args=eqn.in_arg_decls(with_intent=False),
-                        ),
-                    ["expn2"])
+                        )
+
+                gen_vector_wrapper(func_name, args, ["expn2", "ier"])
 
     # }}}
 
