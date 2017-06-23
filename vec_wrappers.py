@@ -1,5 +1,7 @@
 import re
 import sys
+from mako.template import Template
+
 
 if sys.version_info < (3,):
     string_types = basestring  # noqa
@@ -11,7 +13,7 @@ else:
 
 def parse_args(args):
     args_re = re.compile(r"^\s*([a-z]+(?:\s*\*\s*[0-9]+)?)\s+(.*)\s*$")
-    array_re = re.compile(r"([a-zA-Z][a-zA-Z0-9]*)\(([-+*a-z:0-9,() ]+)\)$")
+    array_re = re.compile(r"([a-zA-Z][a-zA-Z0-9]*)\(([-+*a-zA-Z:0-9,() ]+)\)$")
     scalar_re = re.compile(r"([a-zA-Z][a-zA-Z0-9]*)$")
 
     for line in args.split("\n"):
@@ -26,13 +28,17 @@ def parse_args(args):
         array_match = array_re.match(names_and_shapes)
         scalar_match = scalar_re.match(names_and_shapes)
         if array_match is not None:
-            yield type_str, array_match.group(1), tuple(
-                    x.strip() for x in array_match.group(2).split(","))
+            shape = tuple(x.strip() for x in array_match.group(2).split(","))
+
+            yield type_str, array_match.group(1), shape
         elif scalar_match is not None:
             yield type_str, scalar_match.group(1), ()
         else:
             raise RuntimeError("arg parsing did not understand: %s"
                     % names_and_shapes)
+
+
+CSR_MARKER = "*CSR"
 
 
 def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
@@ -61,8 +67,14 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     all_args = set(name for type_, name, shape in args)
     in_args = all_args-set(out_args)
 
+    passed_args_names = []
+    for type_, name, shape in args:
+        passed_args_names.append(name)
+        if CSR_MARKER in shape:
+            passed_args_names.append(name+"_starts")
+
     yield "subroutine %s( &" % vec_func_name
-    yield "%s, nvcount)" % (", ".join(name for type_, name, shape in args))
+    yield "%s, nvcount)" % (", ".join(passed_args_names))
 
     yield "  implicit none"
     yield "  integer, intent(in) :: nvcount"
@@ -71,17 +83,23 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     for type_, name, shape in args:
         intent = "in" if name in in_args else "out"
         if shape:
+            processed_shape = ["0:*" if s_i == CSR_MARKER else s_i for s_i in shape]
             yield "  %s, intent(%s) :: %s(%s)" % (
-                    type_, intent, name, ",".join(str(si) for si in shape))
+                    type_, intent, name, ",".join(str(si) for si in processed_shape))
+            if CSR_MARKER in shape:
+                yield "  integer, intent(in) :: %s_starts(nvcount)" % name
         else:
             yield "  %s, intent(%s) :: %s" % (type_, intent, name)
 
     # assemble call_args
     call_args = []
 
-    def gen_first_index(shape_dim):
+    def gen_first_index(name, shape_dim):
         if str(shape_dim) == "nvcount":
             return "ivcount"
+
+        if str(shape_dim) == CSR_MARKER:
+            return "%s_starts(ivcount)" % name
 
         colon_idx = str(shape_dim).find(":")
         if colon_idx != -1:
@@ -90,11 +108,13 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
             return "1"
 
     for type_, name, shape in args:
-        if not shape or not any("nvcount" in shape_dim for shape_dim in shape):
+        if not shape or not any(
+                ("nvcount" in shape_dim or shape_dim == CSR_MARKER)
+                for shape_dim in shape):
             call_args.append(name)
         else:
             call_args.append("%s(%s)" % (
-                name, ", ".join(gen_first_index(shape_dim)
+                name, ", ".join(gen_first_index(name, shape_dim)
                     for shape_dim in shape)))
 
     # generate loop
