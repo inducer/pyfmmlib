@@ -221,25 +221,50 @@ def gen_vector_wrappers():
                 else:
                     charge_or_dip = "charge"
 
-                gen_vector_wrapper("%(what)spot%(fld_or_grad)s%(dims)ddall%(dp_or_no)s"
+                gen_vector_wrapper(
+                        "%(what)spot%(fld_or_grad)s%(dims)ddall%(dp_or_no)s"
                         % locals(),
                         """
-                      integer if%(fld_or_grad)s
-                      integer ifhess
-                      integer nsources
-                      real *8 sources(%(dims)d,nsources)
-                      real *8 targets(%(dims)d,nvcount)
-                      complex *16 charge(nsources)
-                      complex *16 dipstr(nsources)
-                      real*8 dipvec(%(dims)d,nsources)
-                      complex *16 zk
-                      complex *16 pot(nvcount)
-                      complex *16 %(fld_or_grad)s(%(dims)d,nvcount)
-                      complex *16 hess(%(hess_dims)d,nvcount)
-                      """ % locals(), ["pot", fld_or_grad, "hess"],
-                      arg_order=("if%(fld_or_grad)s%(ifhess_or_no)s,sources,%(charge_or_dip)s,nsources,targets%(wavek_or_no)s,"
-                          "pot,%(fld_or_grad)s%(hess_or_no)s")
-                      % locals(), too_many_ok=True)
+                        integer if%(fld_or_grad)s
+                        integer ifhess
+                        integer nsources
+                        real *8 sources(%(dims)d,nsources)
+                        real *8 targets(%(dims)d,nvcount)
+                        complex *16 charge(nsources)
+                        complex *16 dipstr(nsources)
+                        real*8 dipvec(%(dims)d,nsources)
+                        complex *16 zk
+                        complex *16 pot(nvcount)
+                        complex *16 %(fld_or_grad)s(%(dims)d,nvcount)
+                        complex *16 hess(%(hess_dims)d,nvcount)
+                        """ % locals(), ["pot", fld_or_grad, "hess"],
+                        arg_order=(
+                            "if%(fld_or_grad)s%(ifhess_or_no)s,sources,"
+                            "%(charge_or_dip)s,"
+                            "nsources,targets%(wavek_or_no)s,"
+                            "pot,%(fld_or_grad)s%(hess_or_no)s") % locals(),
+                        too_many_ok=True)
+
+    # }}}
+
+    # {{{ formta
+
+    for dims in [2, 3]:
+        for eqn in [cgh.Helmholtz(dims)]:
+            gen_vector_wrapper("h%ddformta" % dims, Template("""
+                    integer ier(nvcount)
+                    complex*16 zk
+                    real*8 rscale(nvcount)
+                    real *8 sources(${dims},*CSR)
+                    complex *16 charges(*CSR)
+                    integer nsources(nvcount)
+                    real*8 center(${dims}, nvcount)
+                    integer nterms
+                    complex*16 locexp(${eqn.expansion_dims("nterms")},nvcount)
+                    """, strict_undefined=True).render(
+                        dims=dims,
+                        eqn=eqn,
+                        ), ["ier", "locexp"])
 
     # }}}
 
@@ -280,7 +305,7 @@ def gen_vector_wrappers():
 
         hess_output = ""
         taeval_out_args = ["pot", "grad", "hess", "ier"]
-        taeval_func_name ="%s3dtaeval" % what
+        taeval_func_name = "%s3dtaeval" % what
         if what == "l":
             hess_output = """
                 integer ifhess
@@ -308,8 +333,6 @@ def gen_vector_wrappers():
     # }}}
 
     # {{{ translation operators
-
-    from mako.template import Template
 
     for dims in [2, 3]:
         for eqn in [cgh.Laplace(dims), cgh.Helmholtz(dims)]:
