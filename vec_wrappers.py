@@ -1,6 +1,8 @@
 import re
 import sys
 from mako.template import Template
+import functools
+import shlex
 
 
 if sys.version_info < (3,):
@@ -41,8 +43,148 @@ def parse_args(args):
 CSR_MARKER = "*CSR"
 
 
+def with_sub(name, sub):
+    if not sub:
+        return name
+    else:
+        return "%s(%s)" % (name, ", ".join(sub))
+
+
+def pad_fortran(line, width):
+    line += ' ' * (width - 1 - len(line))
+    line += '&'
+    return line
+
+
+def wrap_line_base(line, level=0, width=80, indentation='    ',
+                   pad_func=lambda string, amount: string,
+                   lex_func=functools.partial(shlex.split, posix=False)):
+    """
+    The input is a line of code at the given indentation level. Return the list
+    of lines that results from wrapping the line to the given width. Lines
+    subsequent to the first line in the returned list are padded with extra
+    indentation. The initial indentation level is not included in the input or
+    output lines.
+
+    The `pad_func` argument is a function that adds line continuations. The
+    `lex_func` argument returns the list of tokens in the line.
+    """
+    tokens = lex_func(line)
+    resulting_lines = []
+    at_line_start = True
+    indentation_len = len(level * indentation)
+    current_line = ''
+    padding_width = width - indentation_len
+    for index, word in enumerate(tokens):
+        has_next_word = index < len(tokens) - 1
+        word_len = len(word)
+        if not at_line_start:
+            next_len = indentation_len + len(current_line) + 1 + word_len
+            if next_len < width or (not has_next_word and next_len == width):
+                # The word goes on the same line.
+                current_line += ' ' + word
+            else:
+                # The word goes on the next line.
+                resulting_lines.append(pad_func(current_line, padding_width))
+                at_line_start = True
+                current_line = indentation
+        if at_line_start:
+            current_line += word
+            at_line_start = False
+    resulting_lines.append(current_line)
+    return resulting_lines
+
+
+wrap_line = functools.partial(wrap_line_base, pad_func=pad_fortran)
+
+
+def generate_loop(func_name, args, out_args, csr_many_call, output_reductions):
+    ind = 4*" "
+    yield ind + "do ivcount = 1, nvcount"
+
+    if csr_many_call:
+        for type_, name, shape in args:
+            if shape and CSR_MARKER in shape:
+                yield (ind + "  ncsr_count = "
+                        "%(name)s_starts(ivcount+1) "
+                        "- %(name)s_starts(ivcount)"
+                        % {"name": name})
+
+                break
+                # FIXME: Check that other starts yield the
+                # same count.
+
+        yield ind + "  do icsr = 0, ncsr_count-1"
+
+    # {{{ assemble call_args
+
+    call_args = []
+
+    def gen_first_index(name, shape_dim):
+        if str(shape_dim) == "nvcount":
+            return "ivcount"
+
+        if str(shape_dim) == CSR_MARKER:
+            result = "%s_starts(ivcount)" % name
+            if csr_many_call:
+                result += " + icsr"
+            return result
+
+        colon_idx = str(shape_dim).find(":")
+        if colon_idx != -1:
+            return shape_dim[:colon_idx]
+        else:
+            return "1"
+
+    for type_, name, shape in args:
+        if csr_many_call and name in out_args and CSR_MARKER not in shape:
+            call_args.append(with_sub(name + "_acc",
+                [gen_first_index(name, shape_dim)
+                    for shape_dim in shape
+                    if shape_dim != "nvcount"]))
+        elif not ("nvcount" in shape or CSR_MARKER in shape):
+            call_args.append(name)
+        else:
+            call_args.append("%s(%s)" % (
+                name, ", ".join(gen_first_index(name, shape_dim)
+                    for shape_dim in shape)))
+
+    # }}}
+
+    call_ind = ind + "  "
+    for l in wrap_line(
+            "%scall %s(%s)" % (call_ind, func_name, ", ".join(call_args)),
+            indentation="  "):
+        yield call_ind + l
+
+    if csr_many_call:
+        for type_, name, shape in args:
+            if (csr_many_call and name in out_args and
+                    CSR_MARKER not in shape):
+                tgt_sub = [
+                        ":" if shape_dim != "nvcount" else "ivcount"
+                        for shape_dim in shape
+                        ]
+
+                tgt = with_sub(name, tgt_sub)
+                acc = name + "_acc"
+
+                out_red = output_reductions[name]
+                if out_red == "sum":
+                    yield call_ind + "%s = %s + %s" % (tgt, tgt, acc)
+                elif out_red == "max":
+                    yield call_ind + "%s = max(%s, %s)" % (tgt, tgt, acc)
+                else:
+                    raise ValueError("invalid output reduction: %s" % out_red)
+
+        yield ind + "  enddo"
+
+    yield ind + "enddo"
+
+
 def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
-        arg_order=None, too_many_ok=False):
+        arg_order=None, too_many_ok=False, csr_many_call=False,
+        output_reductions=None, omp_chunk_size=10):
     if vec_func_name is None:
         vec_func_name = func_name+"_vec"
 
@@ -67,18 +209,33 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     all_args = set(name for type_, name, shape in args)
     in_args = all_args-set(out_args)
 
+    has_csr = False
+
     passed_args_names = []
     for type_, name, shape in args:
         passed_args_names.append(name)
         if CSR_MARKER in shape:
             passed_args_names.append(name+"_starts")
+            has_csr = True
 
-    yield "subroutine %s( &" % vec_func_name
-    yield "%s, nvcount)" % (", ".join(passed_args_names))
+    assert not (csr_many_call and not has_csr)
+    assert not (csr_many_call and output_reductions is None)
+
+    # {{{ code generation
+
+    for l in wrap_line(
+            "subroutine %s(%s)" % (
+                vec_func_name,
+                ", ".join(passed_args_names + ["nvcount"]))):
+        yield l
 
     yield "  implicit none"
     yield "  integer, intent(in) :: nvcount"
     yield "  integer ivcount"
+
+    if csr_many_call:
+        yield "  integer ncsr_count"
+        yield "  integer icsr"
 
     for type_, name, shape in args:
         intent = "in" if name in in_args else "out"
@@ -88,61 +245,47 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
                     type_, intent, name, ",".join(str(si) for si in processed_shape))
             if CSR_MARKER in shape:
                 yield "  integer, intent(in) :: %s_starts(nvcount)" % name
+
+            if csr_many_call and name in out_args:
+                tmp_shape = [s_i for s_i in shape if s_i != "nvcount"]
+                yield "  %s :: %s" % (
+                        type_, with_sub(name+"_acc", tmp_shape))
         else:
             yield "  %s, intent(%s) :: %s" % (type_, intent, name)
 
-    # assemble call_args
-    call_args = []
+    extra_omp = ""
+    if has_csr:
+        extra_omp = " schedule(dynamic, %d)" % omp_chunk_size
+    else:
+        extra_omp = " schedule(static, %d)" % omp_chunk_size
 
-    def gen_first_index(name, shape_dim):
-        if str(shape_dim) == "nvcount":
-            return "ivcount"
+    if csr_many_call:
+        private_vars = []
+        for type_, name, shape in args:
+            if shape and name in out_args and CSR_MARKER not in shape:
+                private_vars.append(name + "_acc")
 
-        if str(shape_dim) == CSR_MARKER:
-            return "%s_starts(ivcount)" % name
-
-        colon_idx = str(shape_dim).find(":")
-        if colon_idx != -1:
-            return shape_dim[:colon_idx]
-        else:
-            return "1"
-
-    for type_, name, shape in args:
-        if not shape or not any(
-                ("nvcount" in shape_dim or shape_dim == CSR_MARKER)
-                for shape_dim in shape):
-            call_args.append(name)
-        else:
-            call_args.append("%s(%s)" % (
-                name, ", ".join(gen_first_index(name, shape_dim)
-                    for shape_dim in shape)))
+        extra_omp += " private(%s)" % ", ".join(private_vars)
 
     # generate loop
     yield ""
-    yield "  !$omp parallel do"
-    yield "  do ivcount = 1, nvcount"
-
-    call_args_txt = ""
-    call_args_line = "      "
-    while call_args:
-        if len(call_args_line) >= 70:
-            call_args_txt += call_args_line + " &\n"
-            call_args_line = "      "
-
-        call_args_line += call_args.pop(0)
-        if call_args:
-            call_args_line += ", "
-
-    call_args_txt += call_args_line
-
-    yield "    call %s( &\n%s &\n      )" % (func_name, call_args_txt)
-    yield "  enddo"
-    yield "  !$omp end parallel do"
-    yield ""
+    yield "  if (nvcount .le. %d) then" % omp_chunk_size
+    for l in generate_loop(func_name, args, out_args, csr_many_call,
+            output_reductions):
+        yield l
+    yield "  else"
+    yield "    !$omp parallel do" + extra_omp
+    for l in generate_loop(func_name, args, out_args, csr_many_call,
+            output_reductions):
+        yield l
+    yield "    !$omp end parallel do"
+    yield "  endif"
 
     yield "  return"
     yield "end"
     yield ""
+
+    # }}}
 
 # }}}
 
@@ -345,12 +488,12 @@ def gen_vector_wrappers():
                 if eqn.lh_letter() == "h" and dims == 3:
                     func_name += "quadu"
 
-                args = Template("""
+                args_template = Template("""
                     ${ extra_args }
 
-                    real*8 rscale1(nvcount)
-                    real*8 center1(${dims}, nvcount)
-                    complex*16 expn1(${expn_dims_1}, nvcount)
+                    real*8 rscale1(${input_dim})
+                    real*8 center1(${dims}, ${input_dim})
+                    complex*16 expn1(${expn_dims_1}, ${input_dim})
                     integer nterms1
 
                     real*8 rscale2(nvcount)
@@ -366,18 +509,39 @@ def gen_vector_wrappers():
                         integer ier(nvcount)
                     %endif
 
-                    """, strict_undefined=True).render(
+                    """, strict_undefined=True)
+
+                for (
+                        vec_func_name,
+                        input_dim,
+                        output_reductions,
+                        csr_many_call) in [
+                        (func_name + "_vec", "nvcount",
+                            None, False),
+                        (func_name + "_csr", "*CSR",
+                            {"expn2": "sum", "ier": "max"}, True),
+                        ]:
+                    args = args_template.render(
                         lh_letter=eqn.lh_letter(),
                         dims=dims,
                         expn_dims_1=eqn.expansion_dims("nterms1"),
                         expn_dims_2=eqn.expansion_dims("nterms2"),
                         extra_args=eqn.in_arg_decls(with_intent=False),
+                        input_dim=input_dim,
                         )
-
-                gen_vector_wrapper(func_name, args, ["expn2", "ier"])
+                    gen_vector_wrapper(func_name, args, ["ier", "expn2"],
+                            output_reductions=output_reductions,
+                            vec_func_name=vec_func_name,
+                            csr_many_call=csr_many_call)
 
     # }}}
 
+    result.append("! vim: filetype=fortran")
+
     return "\n".join(result)
+
+
+if __name__ == "__main__":
+    print(gen_vector_wrappers())
 
 # vim: foldmethod=marker
