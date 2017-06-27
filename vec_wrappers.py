@@ -15,8 +15,8 @@ else:
 
 def parse_args(args):
     args_re = re.compile(r"^\s*([a-z]+(?:\s*\*\s*[0-9]+)?)\s+(.*)\s*$")
-    array_re = re.compile(r"([a-zA-Z][a-zA-Z0-9]*)\(([-+*a-zA-Z:0-9,() ]+)\)$")
-    scalar_re = re.compile(r"([a-zA-Z][a-zA-Z0-9]*)$")
+    array_re = re.compile(r"([a-zA-Z][_a-zA-Z0-9]*)\(([-+*_a-zA-Z:0-9,() ]+)\)$")
+    scalar_re = re.compile(r"([a-zA-Z][_a-zA-Z0-9]*)$")
 
     for line in args.split("\n"):
         if not line.strip():
@@ -40,7 +40,13 @@ def parse_args(args):
                     % names_and_shapes)
 
 
-CSR_MARKER = "*CSR"
+INDIRECT_MARKER = "*INDIRECT"
+MANY_MARKER = "*INDIRECT_MANY"
+INDIRECT_MARKERS = [INDIRECT_MARKER, MANY_MARKER]
+
+
+def shape_has_indirect(shape):
+    return any(s_i in INDIRECT_MARKERS for s_i in shape)
 
 
 def with_sub(name, sub):
@@ -98,13 +104,14 @@ def wrap_line_base(line, level=0, width=80, indentation='    ',
 wrap_line = functools.partial(wrap_line_base, pad_func=pad_fortran)
 
 
-def generate_loop(func_name, args, out_args, csr_many_call, output_reductions):
+def generate_loop(func_name, args, out_args, has_indirect_many,
+        output_reductions, tmp_init):
     ind = 4*" "
     yield ind + "do ivcount = 1, nvcount"
 
-    if csr_many_call:
+    if has_indirect_many:
         for type_, name, shape in args:
-            if shape and CSR_MARKER in shape:
+            if shape and MANY_MARKER in shape:
                 yield (ind + "  ncsr_count = "
                         "%(name)s_starts(ivcount+1) "
                         "- %(name)s_starts(ivcount)"
@@ -124,11 +131,11 @@ def generate_loop(func_name, args, out_args, csr_many_call, output_reductions):
         if str(shape_dim) == "nvcount":
             return "ivcount"
 
-        if str(shape_dim) == CSR_MARKER:
-            result = "%s_starts(ivcount)" % name
-            if csr_many_call:
-                result += " + icsr"
-            return result
+        if str(shape_dim) == INDIRECT_MARKER:
+            return "%s_offsets(ivcount)" % name
+        if str(shape_dim) == MANY_MARKER:
+            return ("%(name)s_offsets(%(name)s_starts(ivcount) + icsr)"
+                    % {"name": name})
 
         colon_idx = str(shape_dim).find(":")
         if colon_idx != -1:
@@ -137,12 +144,12 @@ def generate_loop(func_name, args, out_args, csr_many_call, output_reductions):
             return "1"
 
     for type_, name, shape in args:
-        if csr_many_call and name in out_args and CSR_MARKER not in shape:
-            call_args.append(with_sub(name + "_acc",
+        if has_indirect_many and name in out_args and MANY_MARKER not in shape:
+            call_args.append(with_sub(name + "_tmp",
                 [gen_first_index(name, shape_dim)
                     for shape_dim in shape
                     if shape_dim != "nvcount"]))
-        elif not ("nvcount" in shape or CSR_MARKER in shape):
+        elif not ("nvcount" in shape or shape_has_indirect(shape)):
             call_args.append(name)
         else:
             call_args.append("%s(%s)" % (
@@ -151,29 +158,42 @@ def generate_loop(func_name, args, out_args, csr_many_call, output_reductions):
 
     # }}}
 
-    call_ind = ind + "  "
+    call_ind = ind + "    "
+
+    if has_indirect_many:
+        for type_, name, shape in args:
+            if (has_indirect_many and
+                    name in out_args and
+                    MANY_MARKER not in shape):
+                tmp = name + "_tmp"
+
+                if name in tmp_init:
+                    yield call_ind + "%s = %s" % (tmp, tmp_init[name])
+
     for l in wrap_line(
             "%scall %s(%s)" % (call_ind, func_name, ", ".join(call_args)),
             indentation="  "):
         yield call_ind + l
 
-    if csr_many_call:
+    if has_indirect_many:
         for type_, name, shape in args:
-            if (csr_many_call and name in out_args and
-                    CSR_MARKER not in shape):
+            if (has_indirect_many and
+                    name in out_args and
+                    MANY_MARKER not in shape):
                 tgt_sub = [
                         ":" if shape_dim != "nvcount" else "ivcount"
                         for shape_dim in shape
                         ]
 
                 tgt = with_sub(name, tgt_sub)
-                acc = name + "_acc"
+                tmp = name + "_tmp"
 
                 out_red = output_reductions[name]
                 if out_red == "sum":
-                    yield call_ind + "%s = %s + %s" % (tgt, tgt, acc)
+                    yield call_ind + "%s = %s + %s" % (tgt, tgt, tmp)
                 elif out_red == "max":
-                    yield call_ind + "%s = max(%s, %s)" % (tgt, tgt, acc)
+                    yield call_ind + "%s = max(%s, %s)" % (tgt, tgt, tmp)
+
                 else:
                     raise ValueError("invalid output reduction: %s" % out_red)
 
@@ -183,10 +203,12 @@ def generate_loop(func_name, args, out_args, csr_many_call, output_reductions):
 
 
 def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
-        arg_order=None, too_many_ok=False, csr_many_call=False,
-        output_reductions=None, omp_chunk_size=10):
+        arg_order=None, too_many_ok=False,
+        output_reductions=None, tmp_init=None, omp_chunk_size=10):
     if vec_func_name is None:
         vec_func_name = func_name+"_vec"
+
+    # {{{ process args/arg_order
 
     if isinstance(args, string_types):
         args = list(parse_args(args))
@@ -206,20 +228,33 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
         if not too_many_ok and arg_dict:
             raise RuntimeError("too many args: %s" % ",".join(arg_dict))
 
+    del arg_order
+    del too_many_ok
+
+    # }}}
+
     all_args = set(name for type_, name, shape in args)
     in_args = all_args-set(out_args)
 
-    has_csr = False
+    has_indirect = False
+    has_indirect_many = False
 
     passed_args_names = []
     for type_, name, shape in args:
         passed_args_names.append(name)
-        if CSR_MARKER in shape:
-            passed_args_names.append(name+"_starts")
-            has_csr = True
+        if shape_has_indirect(shape):
+            passed_args_names.append(name+"_offsets")
+            has_indirect = True
+            if MANY_MARKER in shape:
+                has_indirect_many = True
+                passed_args_names.append(name+"_starts")
 
-    assert not (csr_many_call and not has_csr)
-    assert not (csr_many_call and output_reductions is None)
+    assert not (has_indirect_many and output_reductions is None)
+    assert not (not has_indirect_many and output_reductions is not None)
+    assert not (not has_indirect_many and tmp_init is not None)
+
+    if tmp_init is None:
+        tmp_init = {}
 
     # {{{ code generation
 
@@ -233,50 +268,79 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     yield "  integer, intent(in) :: nvcount"
     yield "  integer ivcount"
 
-    if csr_many_call:
+    if has_indirect_many:
         yield "  integer ncsr_count"
         yield "  integer icsr"
 
     for type_, name, shape in args:
         intent = "in" if name in in_args else "out"
         if shape:
-            processed_shape = ["0:*" if s_i == CSR_MARKER else s_i for s_i in shape]
-            yield "  %s, intent(%s) :: %s(%s)" % (
-                    type_, intent, name, ",".join(str(si) for si in processed_shape))
-            if CSR_MARKER in shape:
-                yield "  integer, intent(in) :: %s_starts(nvcount)" % name
+            processed_shape = ["0:*" if s_i in INDIRECT_MARKERS else s_i
+                    for s_i in shape]
 
-            if csr_many_call and name in out_args:
+            if (has_indirect_many and
+                    name in out_args and
+                    MANY_MARKER not in shape):
+                yield "  %s %s(%s)" % (
+                        type_, name, ",".join(str(si) for si in processed_shape))
+                yield "  !f2py intent(in,out) %s" % name
+
                 tmp_shape = [s_i for s_i in shape if s_i != "nvcount"]
                 yield "  %s :: %s" % (
-                        type_, with_sub(name+"_acc", tmp_shape))
+                        type_, with_sub(name+"_tmp", tmp_shape))
+            else:
+                yield "  %s, intent(%s) :: %s(%s)" % (
+                        type_, intent, name, ",".join(
+                            str(si) for si in processed_shape))
+
+            if INDIRECT_MARKER in shape:
+                yield "  integer, intent(in) :: %s_offsets(nvcount)" % name
+            if MANY_MARKER in shape:
+                yield "  integer, intent(in) :: %s_offsets(0:*)" % name
+                yield "  integer, intent(in) :: %s_starts(nvcount+1)" % name
+
         else:
             yield "  %s, intent(%s) :: %s" % (type_, intent, name)
 
     extra_omp = ""
-    if has_csr:
+    if has_indirect:
         extra_omp = " schedule(dynamic, %d)" % omp_chunk_size
     else:
         extra_omp = " schedule(static, %d)" % omp_chunk_size
 
-    if csr_many_call:
-        private_vars = []
+    if has_indirect_many:
+        private_vars = ["icsr", "ncsr_count"]
         for type_, name, shape in args:
-            if shape and name in out_args and CSR_MARKER not in shape:
-                private_vars.append(name + "_acc")
+            if shape and name in out_args and MANY_MARKER not in shape:
+                private_vars.append(name + "_tmp")
 
         extra_omp += " private(%s)" % ", ".join(private_vars)
+
+    shared_vars = ["nvcount"]
+    for type_, name, shape in args:
+        shared_vars.append(name)
+        if shape and MANY_MARKER in shape:
+            shared_vars.append(name + "_offsets")
+            shared_vars.append(name + "_starts")
+        if shape and INDIRECT_MARKER in shape:
+            shared_vars.append(name + "_offsets")
+
+    extra_omp += " shared(%s)" % ", ".join(shared_vars)
 
     # generate loop
     yield ""
     yield "  if (nvcount .le. %d) then" % omp_chunk_size
-    for l in generate_loop(func_name, args, out_args, csr_many_call,
-            output_reductions):
+    for l in generate_loop(func_name, args, out_args, has_indirect_many,
+            output_reductions, tmp_init):
         yield l
     yield "  else"
-    yield "    !$omp parallel do" + extra_omp
-    for l in generate_loop(func_name, args, out_args, csr_many_call,
-            output_reductions):
+    for l in wrap_line(
+            "!$omp parallel do default(none)" + extra_omp,
+            indentation="!$omp "):
+        yield "    " + l
+
+    for l in generate_loop(func_name, args, out_args, has_indirect_many,
+            output_reductions, tmp_init):
         yield l
     yield "    !$omp end parallel do"
     yield "  endif"
@@ -398,8 +462,8 @@ def gen_vector_wrappers():
                     integer ier(nvcount)
                     complex*16 zk
                     real*8 rscale(nvcount)
-                    real *8 sources(${dims},*CSR)
-                    complex *16 charges(*CSR)
+                    real *8 sources(${dims},*INDIRECT)
+                    complex *16 charges(*INDIRECT)
                     integer nsources(nvcount)
                     real*8 center(${dims}, nvcount)
                     integer nterms
@@ -515,11 +579,13 @@ def gen_vector_wrappers():
                         vec_func_name,
                         input_dim,
                         output_reductions,
-                        csr_many_call) in [
+                        tmp_init,
+                        ) in [
                         (func_name + "_vec", "nvcount",
-                            None, False),
-                        (func_name + "_csr", "*CSR",
-                            {"expn2": "sum", "ier": "max"}, True),
+                            None, None),
+                        (func_name + "_imany", "*INDIRECT_MANY",
+                            {"expn2": "sum", "ier": "max"},
+                            {"ier": "0"}),
                         ]:
                     args = args_template.render(
                         lh_letter=eqn.lh_letter(),
@@ -531,8 +597,8 @@ def gen_vector_wrappers():
                         )
                     gen_vector_wrapper(func_name, args, ["ier", "expn2"],
                             output_reductions=output_reductions,
-                            vec_func_name=vec_func_name,
-                            csr_many_call=csr_many_call)
+                            tmp_init=tmp_init,
+                            vec_func_name=vec_func_name)
 
     # }}}
 
