@@ -482,7 +482,7 @@ def gen_vector_wrappers():
                 complex*16 zk
                 real*8 rscale
                 real*8 center(3)
-                complex*16 mpole(0:nterms,-nterms:nterms)
+                complex*16 expn(0:nterms,-nterms:nterms)
                 integer nterms
                 real*8 ztarg(3,nvcount)
                 complex*16 pot(nvcount)
@@ -500,7 +500,7 @@ def gen_vector_wrappers():
                     %s
                     real*8 rscale
                     real*8 center(2)
-                    complex*16 mpole(-nterms:nterms)
+                    complex*16 expn(-nterms:nterms)
                     integer nterms
                     real*8 ztarg(2,nvcount)
                     complex*16 pot(nvcount)
@@ -526,7 +526,7 @@ def gen_vector_wrappers():
                 %s
                 real*8 rscale(nvcount)
                 real*8 center(3,nvcount)
-                complex *16 mpole(0:nterms,-nterms:nterms,nvcount)
+                complex *16 expn(0:nterms,-nterms:nterms,nvcount)
                 integer nterms
                 real*8 ztarg(3,nvcount)
                 complex*16 pot(nvcount)
