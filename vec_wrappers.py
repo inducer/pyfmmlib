@@ -456,22 +456,32 @@ def gen_vector_wrappers():
 
     # {{{ formta
 
-    for dims in [2, 3]:
-        for eqn in [cgh.Helmholtz(dims)]:
-            gen_vector_wrapper("h%ddformta" % dims, Template("""
-                    integer ier(nvcount)
-                    complex*16 zk
-                    real*8 rscale(nvcount)
-                    real *8 sources(${dims},*INDIRECT)
-                    complex *16 charges(*INDIRECT)
-                    integer nsources(nvcount)
-                    real*8 center(${dims}, nvcount)
-                    integer nterms
-                    complex*16 locexp(${eqn.expansion_dims("nterms")},nvcount)
-                    """, strict_undefined=True).render(
-                        dims=dims,
-                        eqn=eqn,
-                        ), ["ier", "locexp"])
+    for dp_or_no in ["", "_dp"]:
+        for dims in [2, 3]:
+            for eqn in [cgh.Helmholtz(dims)]:
+                gen_vector_wrapper("h%ddformta%s" % (dims, dp_or_no),
+                Template("""
+                        integer ier(nvcount)
+                        complex*16 zk
+                        real*8 rscale(nvcount)
+                        real *8 sources(${dims},*INDIRECT)
+
+                        % if dp_or_no:
+                            complex *16 dipstr(*INDIRECT)
+                            complex *16 dipvec(${dims}, *INDIRECT)
+                        % else:
+                            complex *16 charge(*INDIRECT)
+                        % endif
+
+                        integer nsources(nvcount)
+                        real*8 center(${dims}, nvcount)
+                        integer nterms
+                        complex*16 locexp(${eqn.expansion_dims("nterms")},nvcount)
+                        """, strict_undefined=True).render(
+                            dims=dims,
+                            eqn=eqn,
+                            dp_or_no=dp_or_no,
+                            ), ["ier", "locexp"])
 
     # }}}
 
