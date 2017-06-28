@@ -1,11 +1,8 @@
 from __future__ import division
 
-# {{{
-
 def hess_size(d):
     return (d*d+d)//2
 
-# }}}
 
 # {{{ equations
 
@@ -20,6 +17,7 @@ class Equation(object):
         raise NotImplementedError
 
     local_expansion_type = "complex*16"
+
 
 class Laplace(Equation):
     def in_arg_list(self):
@@ -47,6 +45,7 @@ class Laplace(Equation):
 
     def k_arg(self):
         return ""
+
 
 class Helmholtz(Equation):
     def in_arg_list(self):
@@ -83,6 +82,7 @@ class Helmholtz(Equation):
         return "zk, "
 
 # }}}
+
 
 class SumComputation:
     def __init__(self, eqn, outputs, source_derivative=False):
