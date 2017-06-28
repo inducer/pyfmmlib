@@ -468,7 +468,7 @@ def gen_vector_wrappers():
 
                         % if dp_or_no:
                             complex *16 dipstr(*INDIRECT)
-                            complex *16 dipvec(${dims}, *INDIRECT)
+                            real *8 dipvec(${dims}, *INDIRECT)
                         % else:
                             complex *16 charge(*INDIRECT)
                         % endif
