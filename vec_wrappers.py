@@ -458,30 +458,37 @@ def gen_vector_wrappers():
 
     for dp_or_no in ["", "_dp"]:
         for dims in [2, 3]:
-            for eqn in [cgh.Helmholtz(dims)]:
-                gen_vector_wrapper("h%ddformta%s" % (dims, dp_or_no),
+            for eqn in [cgh.Laplace(dims), cgh.Helmholtz(dims)]:
+                func_name = "%s%ddformta%s" % (eqn.lh_letter(), dims,  dp_or_no)
+                gen_vector_wrapper(func_name,
                 Template("""
                         integer ier(nvcount)
-                        complex*16 zk
+                        % if eqn.lh_letter() == "h":
+                            complex*16 zk
+                        % endif
                         real*8 rscale(nvcount)
-                        real *8 sources(${dims},*INDIRECT)
+                        real *8 sources(${dims},*INDIRECT_MANY)
 
                         % if dp_or_no:
-                            complex *16 dipstr(*INDIRECT)
-                            real *8 dipvec(${dims}, *INDIRECT)
+                            complex *16 dipstr(*INDIRECT_MANY)
+                            real *8 dipvec(${dims}, *INDIRECT_MANY)
                         % else:
-                            complex *16 charge(*INDIRECT)
+                            complex *16 charge(*INDIRECT_MANY)
                         % endif
 
-                        integer nsources(nvcount)
+                        integer nsources(*INDIRECT_MANY)
                         real*8 center(${dims}, nvcount)
                         integer nterms
-                        complex*16 locexp(${eqn.expansion_dims("nterms")},nvcount)
+                        complex*16 expn(${eqn.expansion_dims("nterms")},nvcount)
                         """, strict_undefined=True).render(
                             dims=dims,
                             eqn=eqn,
                             dp_or_no=dp_or_no,
-                            ), ["ier", "locexp"])
+                            ),
+                        ["ier", "expn"],
+                        output_reductions={"expn": "sum", "ier": "max"},
+                        tmp_init={"ier": "0"},
+                        vec_func_name=func_name + "_imany")
 
     # }}}
 
