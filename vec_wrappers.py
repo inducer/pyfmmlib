@@ -494,19 +494,23 @@ def gen_vector_wrappers():
 
     # {{{ {ta,mp}eval
 
-    for expn_type in ["ta", "mp"]:
-        gen_vector_wrapper("h3d%seval" % expn_type, """
-                complex*16 zk
-                real*8 rscale
-                real*8 center(3)
-                complex*16 expn(0:nterms,-nterms:nterms)
-                integer nterms
-                real*8 ztarg(3,nvcount)
-                complex*16 pot(nvcount)
-                integer iffld
-                complex*16 fld(3,nvcount)
-                integer ier(nvcount)
-                """, ["ier", "pot", "fld"])
+    for what, extra_args in [
+            ("l", ""),
+            ("h", "complex*16 zk")
+            ]:
+        for expn_type in ["ta", "mp"]:
+            gen_vector_wrapper("%s3d%seval" % (what, expn_type), """
+                    %s
+                    real*8 rscale
+                    real*8 center(3)
+                    complex*16 expn(0:nterms,-nterms:nterms)
+                    integer nterms
+                    real*8 ztarg(3,nvcount)
+                    complex*16 pot(nvcount)
+                    integer iffld
+                    complex*16 fld(3,nvcount)
+                    integer ier(nvcount)
+                    """ % extra_args, ["ier", "pot", "fld"])
 
     for what, extra_args in [
             ("l", ""),
@@ -560,13 +564,10 @@ def gen_vector_wrappers():
 
     for dims in [2, 3]:
         for eqn in [cgh.Laplace(dims), cgh.Helmholtz(dims)]:
-            if eqn.lh_letter() == "l" and dims == 3:
-                continue
-
             for xlat in ["mpmp", "mploc", "locloc"]:
                 func_name = "%s%dd%s" % (eqn.lh_letter(), dims, xlat)
 
-                if eqn.lh_letter() == "h" and dims == 3:
+                if dims == 3:
                     func_name += "quadu"
 
                 args_template = Template("""
@@ -582,11 +583,13 @@ def gen_vector_wrappers():
                     complex*16 expn2(${expn_dims_2}, nvcount)
                     integer nterms2
 
-                    %if lh_letter == "h" and dims == 3:
-                        real*8 radius(nvcount)
-                        real*8 xnodes(nquad)
-                        real*8 wts(nquad)
-                        integer nquad
+                    %if dims == 3:
+                        %if lh_letter == "h":
+                            real*8 radius(nvcount)
+                            real*8 xnodes(nquad)
+                            real*8 wts(nquad)
+                            integer nquad
+                        %endif
                         integer ier(nvcount)
                     %endif
 
