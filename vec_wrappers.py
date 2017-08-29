@@ -424,7 +424,10 @@ def gen_vector_wrappers():
                     wavek_or_no = ",zk"
 
                 if dp_or_no:
-                    charge_or_dip = "dipstr,dipvec"
+                    if dims == 2 and what == "l":
+                        charge_or_dip = "dipstr"
+                    else:
+                        charge_or_dip = "dipstr,dipvec"
                 else:
                     charge_or_dip = "charge"
 
@@ -471,7 +474,9 @@ def gen_vector_wrappers():
 
                         % if dp_or_no:
                             complex *16 dipstr(*INDIRECT_MANY)
-                            real *8 dipvec(${dims}, *INDIRECT_MANY)
+                            %if not (eqn.lh_letter() == "l" and dims == 2):
+                                real *8 dipvec(${dims}, *INDIRECT_MANY)
+                            %endif
                         % else:
                             complex *16 charge(*INDIRECT_MANY)
                         % endif

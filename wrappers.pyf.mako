@@ -54,11 +54,15 @@ python module _internal
             subroutine ${eqn.lh_letter()}${dims}dform${expn_type}${dp_or_no}( &
               ier, ${eqn.in_arg_list()|cpost} &
               rscale, source, &
-              % if dp_or_no and not (eqn.lh_letter()=="l" and dims == 2):
-                dipstr,  dipvec, &
-              % else:
+              %if dp_or_no:
+                %if eqn.lh_letter()=="l" and dims == 2:
+                  dipstr, &
+                %else:
+                  dipstr,  dipvec, &
+                %endif
+              %else:
                 charge, &
-              % endif
+              %endif
               ns, center, nterms,expn)
                 intent(in) rscale,sources,charge,ns,center,nterms
                 intent(out) ier,expn
