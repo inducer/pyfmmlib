@@ -5,24 +5,10 @@ GENERATED_SOURCES = ["wrappers.pyf", "vec_wrappers.f90"]
 
 # {{{ wrapper generation
 
-def cpre(s):
-    if s:
-        return ", "+s
-    else:
-        return s
-
-
-def cpost(s):
-    if s:
-        return s + ", "
-    else:
-        return s
-
-
 def generate_wrappers():
     from vec_wrappers import gen_vector_wrappers
-
     from mako.template import Template
+    from codegen_helpers import cpre, cpost
 
     base_name = "wrappers.pyf"
     mako_name = base_name + ".mako"
