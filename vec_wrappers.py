@@ -517,25 +517,29 @@ def gen_vector_wrappers():
                     integer ier(nvcount)
                     """ % extra_args, ["ier", "pot", "fld"])
 
+    for eqn in [cgh.Laplace(2), cgh.Helmholtz(2)]:
+        for expn_type in ["ta", "mp"]:
+            gen_vector_wrapper(
+                    "%s2d%seval" % (eqn.lh_letter(), expn_type),
+                    Template("""
+                        ${eqn.in_arg_decls(with_intent=False)}
+                        real*8 rscale
+                        real*8 center(2)
+                        complex*16 expn(${eqn.expansion_dims("nterms")})
+                        integer nterms
+                        real*8 ztarg(2,nvcount)
+                        complex*16 pot(nvcount)
+                        integer ifgrad
+                        complex*16 grad(2,nvcount)
+                        integer ifhess
+                        complex*16 hess(3,nvcount)
+                        """, strict_undefined=True).render(
+                            eqn=eqn), ["pot", "grad", "hess"])
+
     for what, extra_args in [
             ("l", ""),
             ("h", "complex*16 zk")
             ]:
-        for expn_type in ["ta", "mp"]:
-            gen_vector_wrapper("%s2d%seval" % (what, expn_type), """
-                    %s
-                    real*8 rscale
-                    real*8 center(2)
-                    complex*16 expn(-nterms:nterms)
-                    integer nterms
-                    real*8 ztarg(2,nvcount)
-                    complex*16 pot(nvcount)
-                    integer ifgrad
-                    complex*16 grad(2,nvcount)
-                    integer ifhess
-                    complex*16 hess(3,nvcount)
-                    """ % extra_args, ["pot", "grad", "hess"])
-
         hess_output = ""
         taeval_out_args = ["pot", "grad", "hess", "ier"]
         taeval_func_name = "%s3dtaeval" % what
