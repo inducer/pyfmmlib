@@ -73,7 +73,7 @@ python module _internal
                 real *8 dipvec(${dims},ns)
                 complex *16 dipstr(ns)
 
-                complex*16 expn(${eqn.expansion_dims()})
+                complex*16 expn(${eqn.expansion_dims("nterms")})
             end subroutine
           % endfor
         % endfor

@@ -361,6 +361,13 @@ def gen_vector_wrappers():
         for line in get_vector_wrapper(*args, **kwargs):
             result.append(line)
 
+    def render_template(tpl_string, **kwargs):
+        from codegen_helpers import cpre, cpost
+
+        tpl = Template(tpl_string, strict_undefined=True)
+        result.extend(l.rstrip()
+                for l in tpl.render(cpre=cpre, cpost=cpost, **kwargs).split("\n"))
+
     import codegen_helpers as cgh
 
     # {{{ helpers
@@ -494,6 +501,165 @@ def gen_vector_wrappers():
                         output_reductions={"expn": "sum", "ier": "max"},
                         tmp_init={"ier": "0"},
                         vec_func_name=func_name + "_imany")
+
+    # }}}
+
+    # {{{ formta_qbx
+
+    for dp_or_no in ["", "_dp"]:
+        for dims in [2, 3]:
+            for eqn in [cgh.Laplace(dims), cgh.Helmholtz(dims)]:
+                render_template("""
+                    <%
+                        strength_args = []
+                        if dp_or_no:
+                            strength_args.append("dipstr")
+
+                            if not (eqn.lh_letter() == "l" and dims == 2):
+                                strength_args.append("dipvec")
+                        else:
+                            strength_args.append("charge")
+
+                        exp_dims = eqn.expansion_dims("nterms")
+                    %>
+
+                    subroutine ${eqn.lh_letter()}${dims}dformta${dp_or_no}_qbx( &
+                            ier, ${eqn.in_arg_list()|cpost} &
+                            nsources, sources, &
+                            ${ ", ".join(strength_args) }, &
+                            ntgt_centers, nqbx_centers, qbx_centers, &
+                            global_qbx_centers, &
+                            qbx_expansion_radii, &
+                            qbx_center_to_target_box, &
+                            nterms, &
+                            source_box_starts, source_box_lists, &
+                            box_source_starts, box_source_counts_nonchild, &
+                            expn &
+                            )
+                        implicit none
+
+                        ! ------------------ arguments
+
+                        integer, intent(out) :: ier
+                        ${eqn.in_arg_decls()}
+
+                        integer, intent(in) :: nsources
+                        real *8, intent(in) :: sources(${dims}, 0:nsources-1)
+                        % if dp_or_no:
+                            complex *16, intent(in) :: dipstr(0:*)
+                            %if not (eqn.lh_letter() == "l" and dims == 2):
+                                real *8, intent(in) :: dipvec(${dims}, 0:*)
+                            %endif
+                        % else:
+                            complex *16, intent(in) :: charge(0:*)
+                        % endif
+                        integer, intent(in) :: ntgt_centers
+                        integer, intent(in) :: nqbx_centers
+                        integer, intent(in) :: global_qbx_centers(0:ntgt_centers-1)
+                        real*8, intent(in) :: qbx_centers(0:nqbx_centers-1, ${dims})
+                        real*8, intent(in) :: qbx_expansion_radii(0:nqbx_centers-1)
+                        integer, intent(in) :: qbx_center_to_target_box( &
+                            0:nqbx_centers-1)
+                        integer, intent(in) :: nterms
+
+                        integer, intent(in) :: source_box_starts(0:*)
+                        integer, intent(in) :: source_box_lists(0:*)
+
+                        integer, intent(in) :: box_source_starts(0:*)
+                        integer, intent(in) :: box_source_counts_nonchild(0:*)
+
+                        complex*16, intent(out) :: expn( &
+                                ${exp_dims}, &
+                                0:nqbx_centers-1)
+
+                        ! ------------------ local vars
+
+                        integer itgt_center
+                        integer tgt_icenter
+
+                        integer itgt_box
+                        real*8 rscale
+                        real*8 center(${dims})
+
+                        integer isrc_box, isrc_box_start, isrc_box_stop
+
+                        integer src_ibox
+                        integer isrc_start
+
+                        integer ier_tmp
+                        complex*16 expn_tmp(${exp_dims})
+
+                        ! ------------------ code
+
+                        ier = 0
+
+                        !$omp parallel do default(none) schedule(dynamic, 10) &
+                        !$omp private(tgt_icenter, center, rscale, itgt_box, &
+                        !$omp   isrc_box_start, isrc_box_stop, src_ibox, &
+                        !$omp   isrc_start, expn_tmp, ier_tmp) &
+                        !$omp shared(ier,  ${eqn.in_arg_list()|cpost} &
+                        !$omp   nsources, sources, &
+                                    %if dp_or_no:
+                        !$omp           dipstr, &
+                                        %if not (eqn.lh_letter() == "l" and dims==2):
+                        !$omp               dipvec, &
+                                        %endif
+                                    %else:
+                        !$omp           charge, &
+                                    %endif
+                        !$omp   ntgt_centers, nqbx_centers, &
+                        !$omp   global_qbx_centers, qbx_centers, &
+                        !$omp   qbx_expansion_radii, &
+                        !$omp   qbx_center_to_target_box, nterms, &
+                        !$omp   source_box_starts, source_box_lists, &
+                        !$omp   box_source_starts, box_source_counts_nonchild, expn)
+
+                        do itgt_center = 0, ntgt_centers-1
+                            tgt_icenter = global_qbx_centers(itgt_center)
+
+                            expn(${exp_dims}, tgt_icenter) = 0
+
+                            center = qbx_centers(tgt_icenter, :)
+                            rscale = qbx_expansion_radii(tgt_icenter)
+
+                            itgt_box = qbx_center_to_target_box(tgt_icenter)
+
+                            isrc_box_start = source_box_starts(itgt_box)
+                            isrc_box_stop = source_box_starts(itgt_box+1)
+
+                            do isrc_box = isrc_box_start, isrc_box_stop-1
+                                src_ibox = source_box_lists(isrc_box)
+                                isrc_start = box_source_starts(src_ibox)
+
+                                ier_tmp = 0
+                                call ${eqn.lh_letter()}${dims}dformta${dp_or_no}( &
+                                    ier_tmp, ${eqn.in_arg_list()|cpost} &
+                                    rscale, &
+                                    sources(1, isrc_start), &
+                                    %if dp_or_no:
+                                        dipstr(isrc_start), &
+                                        %if not (eqn.lh_letter() == "l" and dims==2):
+                                            dipvec(1, isrc_start), &
+                                        %endif
+                                    %else:
+                                        charge(isrc_start), &
+                                    %endif
+                                    box_source_counts_nonchild(src_ibox), &
+                                    center, &
+                                    nterms, &
+                                    expn_tmp)
+
+                                expn(${exp_dims}, tgt_icenter) = &
+                                    expn(${exp_dims}, tgt_icenter) + expn_tmp
+
+                                if (ier_tmp.ne.0) then
+                                    ier = ier_tmp
+                                end if
+                            end do
+                        end do
+                    end
+                    """,
+                    eqn=eqn, dims=dims, dp_or_no=dp_or_no)
 
     # }}}
 
