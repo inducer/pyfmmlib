@@ -31,11 +31,6 @@ Run::
 
 as usual and cross your fingers.
 
-If you'd like (rather effective) go-fast stripes,
-on GNU platforms, use this::
-
-    ./setup-optimized.sh install
-
 Documentation
 -------------
 

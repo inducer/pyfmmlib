@@ -1,8 +1,8 @@
+include COPYING
 include README.rst
 include codegen_helpers.py
 include vec_wrappers.py
 include wrappers.pyf.mako
-include setup.sh
 
 include wrappers.pyf
 include vec_wrappers.f90
