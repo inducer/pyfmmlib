@@ -143,7 +143,7 @@ def main():
           long_description=open("README.rst", "rt").read(),
           author="Leslie Greengard, Zydrunas Gimbutas, Andreas Kloeckner",
           author_email="inform@tiker.net",
-          license="wrapper: MIT/code: GPL2",
+          license="wrapper: MIT/code: 3-clause BSD",
           url="http://github.com/inducer/pyfmmlib",
           classifiers=[
               'Development Status :: 4 - Beta',
@@ -151,7 +151,7 @@ def main():
               'Intended Audience :: Other Audience',
               'Intended Audience :: Science/Research',
               'License :: OSI Approved :: MIT License',
-              'License :: OSI Approved :: GNU General Public License v2 (GPLv2)',
+              'License :: OSI Approved :: BSD License',
               'Programming Language :: Fortran',
               'Programming Language :: Python',
               'Topic :: Scientific/Engineering',

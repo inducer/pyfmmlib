@@ -90,9 +90,9 @@ Two more things:
 License
 -------
 
-This wrapper is licensed under the MIT license, as below. Beware, though, that
-`fmmlib{2,3}d` are licensed under the GNU General Public License v2, which is
-more restrictive.
+`fmmlib{2,3}d` are licensed under the 3-clause BSD license. (as of November 2017)
+
+This wrapper is licensed under the MIT license, as below.
 
 Copyright (C) 2013 Andreas Kloeckner
 
