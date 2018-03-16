@@ -1,5 +1,10 @@
-pyfmmlib
-========
+pyfmmlib: A Python Interface to FMMLIB
+======================================
+
+.. image:: https://gitlab.tiker.net/inducer/pyfmmlib/badges/master/pipeline.svg
+   :target: https://gitlab.tiker.net/inducer/pyfmmlib/commits/master
+.. image:: https://badge.fury.io/py/pyfmmlib.png
+    :target: http://pypi.python.org/pypi/pyfmmlib
 
 pyfmmlib is a Python wrapper for `fmmlib2d
 <https://cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html>`_ and `fmmlib3d
@@ -11,11 +16,6 @@ Zydrunas Gimbutas and Leslie Greengard (and including code by many more people).
 
 This wrapper is far from comprehensive. It just catches the things I ended up
 needing. Nonetheless, the FMMs and a fair bit of other useful stuff is accessible.
-
-- Andreas Kloeckner <inform@tiker.net>
-
-.. image:: https://badge.fury.io/py/pyfmmlib.png
-    :target: http://pypi.python.org/pypi/pyfmmlib
 
 Installation
 ------------
