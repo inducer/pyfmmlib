@@ -468,39 +468,52 @@ def gen_vector_wrappers():
 
     for dp_or_no in ["", "_dp"]:
         for dims in [2, 3]:
-            for eqn in [cgh.Laplace(dims), cgh.Helmholtz(dims)]:
-                func_name = "%s%ddformta%s" % (eqn.lh_letter(), dims,  dp_or_no)
-                gen_vector_wrapper(func_name,
-                Template("""
-                        integer ier(nvcount)
-                        % if eqn.lh_letter() == "h":
-                            complex*16 zk
-                        % endif
-                        real*8 rscale(nvcount)
-                        real *8 sources(${dims},*INDIRECT_MANY)
+            if dims == 3:
+                trunc_or_no = ["", "_trunc"]
+            else:
+                trunc_or_no = [""]
 
-                        % if dp_or_no:
-                            complex *16 dipstr(*INDIRECT_MANY)
-                            %if not (eqn.lh_letter() == "l" and dims == 2):
-                                real *8 dipvec(${dims}, *INDIRECT_MANY)
-                            %endif
-                        % else:
-                            complex *16 charge(*INDIRECT_MANY)
-                        % endif
+            for trunc in trunc_or_no:
+                for eqn in [cgh.Laplace(dims), cgh.Helmholtz(dims)]:
+                    func_name = "%s%ddformta%s%s" % (eqn.lh_letter(), dims,
+                            dp_or_no, trunc)
+                    gen_vector_wrapper(func_name,
+                    Template("""
+                            integer ier(nvcount)
+                            % if eqn.lh_letter() == "h":
+                                complex*16 zk
+                            % endif
+                            real*8 rscale(nvcount)
+                            real *8 sources(${dims},*INDIRECT_MANY)
 
-                        integer nsources(*INDIRECT_MANY)
-                        real*8 center(${dims}, nvcount)
-                        integer nterms
-                        complex*16 expn(${eqn.expansion_dims("nterms")},nvcount)
-                        """, strict_undefined=True).render(
-                            dims=dims,
-                            eqn=eqn,
-                            dp_or_no=dp_or_no,
-                            ),
-                        ["ier", "expn"],
-                        output_reductions={"expn": "sum", "ier": "max"},
-                        tmp_init={"ier": "0"},
-                        vec_func_name=func_name + "_imany")
+                            % if dp_or_no:
+                                complex *16 dipstr(*INDIRECT_MANY)
+                                %if not (eqn.lh_letter() == "l" and dims == 2):
+                                    real *8 dipvec(${dims}, *INDIRECT_MANY)
+                                %endif
+                            % else:
+                                complex *16 charge(*INDIRECT_MANY)
+                            % endif
+
+                            integer nsources(*INDIRECT_MANY)
+                            real*8 center(${dims}, nvcount)
+                            integer nterms
+                            complex*16 expn(${eqn.expansion_dims("nterms")},nvcount)
+
+                            % if trunc:
+                                real *8 wlege(0:nlege,0:nlege)
+                                integer nlege
+                            % endif
+                            """, strict_undefined=True).render(
+                                dims=dims,
+                                eqn=eqn,
+                                dp_or_no=dp_or_no,
+                                trunc=trunc,
+                                ),
+                            ["ier", "expn"],
+                            output_reductions={"expn": "sum", "ier": "max"},
+                            tmp_init={"ier": "0"},
+                            vec_func_name=func_name + "_imany")
 
     # }}}
 

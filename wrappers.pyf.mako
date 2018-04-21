@@ -7,6 +7,8 @@
 
 python module _internal
   interface
+    ! {{{ special functions
+
       subroutine jfuns2d(ier,nterms,z,scale,fjs,ifder,fjder, &
           lwfjs,iscale,ntop)
         ! implicit real *8 (a-h,o-z)
@@ -21,8 +23,6 @@ python module _internal
         complex*16, intent(cache,hide) :: iscale(0:lwfjs)
         complex*16, intent(out) :: ntop
     end subroutine
-
-    ! {{{ special functions
 
     subroutine legeexps(itype,n,x,u,v,whts)
       integer, intent(in) :: itype, n
@@ -41,6 +41,11 @@ python module _internal
       intent(in) n, ifwhts
       intent(out) ts, whts
       dimension ts(n),whts(n)
+    end subroutine
+
+    subroutine ylgndrini(nmax, rat1, rat2)
+      integer, intent(in) :: nmax
+      real *8, intent(out) :: rat1(0:nmax,0:nmax), rat2(0:nmax,0:nmax)
     end subroutine
 
     ! }}}
