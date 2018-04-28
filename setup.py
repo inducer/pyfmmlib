@@ -41,9 +41,14 @@ DASH_SEPARATOR = 75 * "-"
 
 def main():
     import os
-    build_mode = os.environ.get("PYFMMLIB_BUILD_MODE", "openmp-opt")
+    build_mode = os.environ.get("PYFMMLIB_BUILD_MODE", "openmp-ofast")
 
-    if build_mode == "openmp-opt":
+    if build_mode == "openmp-ofast":
+        os.environ["FOPT"] = "-Ofast -fopenmp"
+        os.environ["OPT"] = "-Ofast -fopenmp"
+        os.environ["EXTRA_LINK_ARGS"] = "-fopenmp"
+
+    elif build_mode == "openmp-opt":
         os.environ["FOPT"] = "-O3 -fopenmp"
         os.environ["OPT"] = "-O3 -fopenmp"
         os.environ["EXTRA_LINK_ARGS"] = "-fopenmp"
