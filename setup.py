@@ -44,25 +44,32 @@ def main():
     build_mode = os.environ.get("PYFMMLIB_BUILD_MODE", "openmp-ofast")
 
     if build_mode == "openmp-ofast":
-        os.environ["FOPT"] = "-Ofast -fopenmp"
-        os.environ["OPT"] = "-Ofast -fopenmp"
-        os.environ["EXTRA_LINK_ARGS"] = "-fopenmp"
+        FOPT_ARGS = "-Ofast -fopenmp"
+        OPT_ARGS = "-Ofast -fopenmp"
+        EXTRA_LINK_ARGS = "-fopenmp"
 
     elif build_mode == "openmp-opt":
-        os.environ["FOPT"] = "-O3 -fopenmp"
-        os.environ["OPT"] = "-O3 -fopenmp"
-        os.environ["EXTRA_LINK_ARGS"] = "-fopenmp"
+        FOPT_ARGS = "-O3 -fopenmp"
+        OPT_ARGS = "-O3 -fopenmp"
+        EXTRA_LINK_ARGS = "-fopenmp"
 
     elif build_mode == "debug":
-        os.environ["FOPT"] = "-g"
-        os.environ["OPT"] = "-g"
-        os.environ["EXTRA_LINK_ARGS"] = "-g"
+        FOPT_ARGS = "-g"
+        ARGS_OPT = "-g"
+        EXTRA_LINK_ARGS = "-g"
 
     elif build_mode == "setuptools":
-        pass
-
+        FOPT_ARGS = os.environ.get("FOPT", "")
+        OPT_ARGS = os.environ.get("OPT", "")
+        EXTRA_LINK_ARGS = os.environ.get("EXTRA_LINK_ARGS", "")
     else:
         raise ValueError("invalid value of $PYFMMLIB_BUILD_MODE")
+
+    # NOTE: gfortran 8.1+ errors on incorrect dummy argument shape
+    # https://groups.google.com/forum/#!topic/comp.lang.fortran/x3JnAjRX-KA
+    os.environ["FOPT"] = "-std=legacy {}".format(FOPT_ARGS)
+    os.environ["OPT"] = "-std=legacy {}".format(OPT_ARGS)
+    os.environ["EXTRA_LINK_ARGS"] = "-shared {}".format(EXTRA_LINK_ARGS)
 
     try:
         import mako  # noqa
