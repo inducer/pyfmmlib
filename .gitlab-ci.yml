@@ -26,7 +26,7 @@ Python 2.7 Apple:
   script:
   - py_version=2.7
   - EXTRA_INSTALL="numpy mako"
-  - export CC=gcc-8
+  - export PYFMMLIB_BUILD_MODE=setuptools
   - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
   - ". ./build-and-test-py-project.sh"
   tags:
