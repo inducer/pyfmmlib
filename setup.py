@@ -68,8 +68,9 @@ def main():
     # NOTE: gfortran 8.1+ errors on incorrect dummy argument shape
     # https://groups.google.com/forum/#!topic/comp.lang.fortran/x3JnAjRX-KA
     os.environ["FOPT"] = "-std=legacy {}".format(FOPT_ARGS)
-    os.environ["OPT"] = "-std=legacy {}".format(OPT_ARGS)
-    os.environ["EXTRA_LINK_ARGS"] = "-shared {}".format(EXTRA_LINK_ARGS)
+
+    os.environ["OPT"] = OPT_ARGS
+    os.environ["EXTRA_LINK_ARGS"] = EXTRA_LINK_ARGS
 
     try:
         import mako  # noqa
