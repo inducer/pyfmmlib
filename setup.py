@@ -173,8 +173,8 @@ def main():
               ],
 
           packages=["pyfmmlib"],
-          install_requires=[
-              "pytest>=2",
+          setup_requires=[
+              "numpy",
               ],
           ext_modules=[
               Extension(
