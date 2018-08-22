@@ -20,7 +20,11 @@ needing. Nonetheless, the FMMs and a fair bit of other useful stuff is accessibl
 Installation
 ------------
 
-To build this, you need
+Binary wheels and source code are available from the `Python package index <https://pypi.org/project/pyfmmlib/>`_.
+Thank you to `Isuru Fernando <https://github.com/isuruf>`_ for working on `infrastructure to build those wheels
+<https://github.com/isuruf/pyfmmlib-wheels>`_.
+
+To build this from source, you need
 
 * `numpy <http://numpy.org>`_
 * `mako <http://makotemplates.org>`_ (`pip <https://pypi.python.org/pypi/pip>`_ install mako or `ez_install mako`)
