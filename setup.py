@@ -45,7 +45,7 @@ def main():
 
     if build_mode == "openmp-ofast":
         FOPT_ARGS = "-Ofast -fopenmp"
-        OPT_ARGS = "-Ofast -fopenmp"
+        OPT_ARGS = "-Ofast"
         EXTRA_LINK_ARGS = "-fopenmp"
 
     elif build_mode == "openmp-opt":
