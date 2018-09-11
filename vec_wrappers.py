@@ -204,7 +204,8 @@ def generate_loop(func_name, args, out_args, has_indirect_many,
 
 def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
         arg_order=None, too_many_ok=False,
-        output_reductions=None, tmp_init=None, omp_chunk_size=10):
+        output_reductions=None, tmp_init=None, omp_chunk_size=10,
+        out_only_args=()):
     if vec_func_name is None:
         vec_func_name = func_name+"_vec"
 
@@ -274,6 +275,10 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
 
     for type_, name, shape in args:
         intent = "in" if name in in_args else "out"
+
+        if name in out_only_args:
+            assert intent == "out"
+
         if shape:
             processed_shape = ["0:*" if s_i in INDIRECT_MARKERS else s_i
                     for s_i in shape]
@@ -283,7 +288,9 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
                     MANY_MARKER not in shape):
                 yield "  %s %s(%s)" % (
                         type_, name, ",".join(str(si) for si in processed_shape))
-                yield "  !f2py intent(in,out) %s" % name
+
+                intent = "in,out" if name not in out_only_args else "out"
+                yield "  !f2py intent(%s) %s" % (intent, name)
 
                 tmp_shape = [s_i for s_i in shape if s_i != "nvcount"]
                 yield "  %s :: %s" % (
@@ -474,10 +481,10 @@ def gen_vector_wrappers():
                 Template("""
                         integer ier(nvcount)
                         % if eqn.lh_letter() == "h":
-                            complex*16 zk
+                            complex *16 zk
                         % endif
-                        real*8 rscale(nvcount)
-                        real *8 sources(${dims},*INDIRECT_MANY)
+                        real *8 rscale
+                        real *8 sources(${dims}, *INDIRECT_MANY)
 
                         % if dp_or_no:
                             complex *16 dipstr(*INDIRECT_MANY)
@@ -489,9 +496,9 @@ def gen_vector_wrappers():
                         % endif
 
                         integer nsources(*INDIRECT_MANY)
-                        real*8 center(${dims}, nvcount)
+                        real *8 centers(${dims}, *INDIRECT)
                         integer nterms
-                        complex*16 expn(${eqn.expansion_dims("nterms")},nvcount)
+                        complex *16 expn(${eqn.expansion_dims("nterms")}, nvcount)
                         """, strict_undefined=True).render(
                             dims=dims,
                             eqn=eqn,
@@ -500,7 +507,8 @@ def gen_vector_wrappers():
                         ["ier", "expn"],
                         output_reductions={"expn": "sum", "ier": "max"},
                         tmp_init={"ier": "0"},
-                        vec_func_name=func_name + "_imany")
+                        vec_func_name=func_name + "_imany",
+                        out_only_args=("ier", "expn"))
 
     # }}}
 
