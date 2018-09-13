@@ -745,63 +745,84 @@ def gen_vector_wrappers():
 
     # {{{ translation operators
 
-    for dims in [2, 3]:
-        for eqn in [cgh.Laplace(dims), cgh.Helmholtz(dims)]:
-            for xlat in ["mpmp", "mploc", "locloc"]:
-                func_name = "%s%dd%s" % (eqn.lh_letter(), dims, xlat)
+    args_template = Template("""
+        ${ extra_args }
 
-                if dims == 3:
-                    func_name += "quadu"
+        real*8 rscale1(${center1_dim})
+        real*8 center1(${dims}, ${center1_dim})
+        complex*16 expn1(${expn_dims_1}, ${center1_dim})
+        integer nterms1
 
-                args_template = Template("""
-                    ${ extra_args }
+        real*8 rscale2(${center2_dim})
+        real*8 center2(${dims}, ${center2_dim})
+        complex*16 expn2(${expn_dims_2},nvcount)
+        integer nterms2
 
-                    real*8 rscale1(${input_dim})
-                    real*8 center1(${dims}, ${input_dim})
-                    complex*16 expn1(${expn_dims_1}, ${input_dim})
-                    integer nterms1
+        %if dims == 3:
+            %if lh_letter == "h":
+                real*8 radius(nvcount)
+                real*8 xnodes(nquad)
+                real*8 wts(nquad)
+                integer nquad
+            %endif
+            integer ier(nvcount)
+        %endif
+        """, strict_undefined=True)
 
-                    real*8 rscale2(nvcount)
-                    real*8 center2(${dims}, nvcount)
-                    complex*16 expn2(${expn_dims_2}, nvcount)
-                    integer nterms2
+    def gen_xlat_func(dim, eqn, xlat, suffix, center1_dim, center2_dim,
+            output_reductions, tmp_init, out_only_args):
+        func_name = "%s%dd%s" % (eqn.lh_letter(), dims, xlat)
+        if dims == 3:
+            func_name += "quadu"
 
-                    %if dims == 3:
-                        %if lh_letter == "h":
-                            real*8 radius(nvcount)
-                            real*8 xnodes(nquad)
-                            real*8 wts(nquad)
-                            integer nquad
-                        %endif
-                        integer ier(nvcount)
-                    %endif
+        args = args_template.render(
+            lh_letter=eqn.lh_letter(),
+            dims=dims,
+            expn_dims_1=eqn.expansion_dims("nterms1"),
+            expn_dims_2=eqn.expansion_dims("nterms2"),
+            extra_args=eqn.in_arg_decls(with_intent=False),
+            center1_dim=center1_dim,
+            center2_dim=center2_dim,
+        )
 
-                    """, strict_undefined=True)
+        gen_vector_wrapper(func_name, args, ["ier", "expn2"],
+                output_reductions=output_reductions,
+                tmp_init=tmp_init,
+                vec_func_name=func_name + suffix,
+                out_only_args=out_only_args)
 
-                for (
-                        vec_func_name,
-                        input_dim,
-                        output_reductions,
-                        tmp_init,
-                        ) in [
-                        (func_name + "_vec", "nvcount",
-                            None, None),
-                        (func_name + "_imany", "*INDIRECT_MANY",
-                            {"expn2": "sum", "ier": "max"},
-                            {"ier": "0"}),
-                        ]:
-                    args = args_template.render(
-                        lh_letter=eqn.lh_letter(),
-                        dims=dims,
-                        expn_dims_1=eqn.expansion_dims("nterms1"),
-                        expn_dims_2=eqn.expansion_dims("nterms2"),
-                        extra_args=eqn.in_arg_decls(with_intent=False),
-                        input_dim=input_dim,
-                        )
-                    gen_vector_wrapper(func_name, args, ["ier", "expn2"],
-                            output_reductions=output_reductions,
-                            tmp_init=tmp_init,
-                            vec_func_name=vec_func_name)
+    all_xlat_ops = [(dims, eqn, xlat)
+            for dims in (2, 3)
+            for eqn in (cgh.Laplace(dims), cgh.Helmholtz(dims))
+            for xlat in ("mpmp", "mploc", "locloc")]
+
+    for dims, eqn, xlat in all_xlat_ops:
+        gen_xlat_func(dims, eqn, xlat,
+                suffix="_vec",
+                center1_dim="nvcount",
+                center2_dim="nvcount",
+                output_reductions=None,
+                tmp_init=None,
+                out_only_args=())
+
+    for dims, eqn, xlat in all_xlat_ops:
+        gen_xlat_func(dims, eqn, xlat,
+                suffix="_imany",
+                center1_dim="*INDIRECT_MANY",
+                center2_dim="nvcount",
+                output_reductions={"expn2": "sum", "ier": "max"},
+                tmp_init={"ier": "0"},
+                out_only_args=())
+
+    for dims in (2, 3):
+        for eqn in (cgh.Laplace(dims), cgh.Helmholtz(dims)):
+            gen_xlat_func(dims, eqn, "locloc",
+                    suffix="_qbx",
+                    center1_dim="*INDIRECT",
+                    center2_dim="*INDIRECT",
+                    output_reductions=None,
+                    tmp_init=None,
+                    out_only_args=("ier", "expn2"))
 
     # }}}
 
