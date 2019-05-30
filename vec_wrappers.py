@@ -865,7 +865,6 @@ def gen_vector_wrappers():
             real*8 rotmatf(0:ldm,0:ldm,-ldm:ldm, ${input_dim})
             real*8 rotmatb(0:ldm,0:ldm,-ldm:ldm, ${input_dim})
             integer ldm
-
             """, strict_undefined=True)
 
         args = args_template.render(
@@ -881,6 +880,7 @@ def gen_vector_wrappers():
                 func_name,
                 args,
                 ["ier", "expn2"],
+                vec_func_name=func_name + "_imany",
                 output_reductions={"expn2": "sum", "ier": "max"},
                 tmp_init={"ier": "0"})
 
