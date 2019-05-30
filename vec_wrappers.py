@@ -389,6 +389,14 @@ def gen_vector_wrappers():
             real*8 triarea(nvcount)
             """, ["triarea"])
 
+    gen_vector_wrapper("rotviarecur3p_init", """
+            integer ier(nvcount)
+            real*8 rotmat(0:ldc,0:ldc,-ldc:ldc,nvcount)
+            integer ldc
+            real*8 theta(nvcount)
+            """,
+            ["ier", "rotmat"])
+    
     # }}}
 
     # {{{ special functions
@@ -823,6 +831,58 @@ def gen_vector_wrappers():
                     output_reductions=None,
                     tmp_init=None,
                     out_only_args=("ier", "expn2"))
+
+    # }}}
+
+    # {{{ mploc_quadu2 translation operators
+
+    dims = 3
+    xlat = "mploc"
+    for eqn in [cgh.Laplace(dims), cgh.Helmholtz(dims)]:
+        func_name = "%s%dd%squadu2_trunc" % (eqn.lh_letter(), dims, xlat)
+
+        args_template = Template("""
+            ${ extra_args }
+
+            real*8 rscale1(${input_dim})
+            real*8 center1(${dims}, ${input_dim})
+            complex*16 expn1(${expn_dims_1}, ${input_dim})
+            integer nterms1
+
+            real*8 rscale2(nvcount)
+            real*8 center2(${dims}, nvcount)
+            complex*16 expn2(${expn_dims_2}, nvcount)
+            integer nterms2
+
+            %if lh_letter == "h":
+                real*8 radius(nvcount)
+                real*8 xnodes(nquad)
+                real*8 wts(nquad)
+                integer nquad
+            %endif
+            integer ier(nvcount)
+
+            real*8 rotmatf(0:ldm,0:ldm,-ldm:ldm, ${input_dim})
+            real*8 rotmatb(0:ldm,0:ldm,-ldm:ldm, ${input_dim})
+            integer ldm
+
+            """, strict_undefined=True)
+
+        args = args_template.render(
+                dims=dims,
+                lh_letter=eqn.lh_letter(),
+                expn_dims_1=eqn.expansion_dims("nterms1"),
+                expn_dims_2=eqn.expansion_dims("nterms2"),
+                extra_args=eqn.in_arg_decls(with_intent=False),
+                input_dim="*INDIRECT_MANY",
+                )
+        
+        gen_vector_wrapper(
+                func_name,
+                args,
+                ["ier", "expn2"],
+                output_reductions={"expn2": "sum", "ier": "max"},
+                tmp_init={"ier": "0"})
 
     # }}}
 
