@@ -55,13 +55,14 @@ def main():
 
     elif build_mode == "debug":
         FOPT_ARGS = "-g"
-        ARGS_OPT = "-g"
+        OPT_ARGS = "-g"
         EXTRA_LINK_ARGS = "-g"
 
     elif build_mode == "setuptools":
         FOPT_ARGS = os.environ.get("FOPT", "")
         OPT_ARGS = os.environ.get("OPT", "")
         EXTRA_LINK_ARGS = os.environ.get("EXTRA_LINK_ARGS", "")
+
     else:
         raise ValueError("invalid value of $PYFMMLIB_BUILD_MODE")
 
