@@ -847,6 +847,7 @@ def gen_vector_wrappers():
             real*8 rscale1(${input_dim})
             real*8 center1(${dims}, ${input_dim})
             complex*16 expn1(${expn_dims_1}, ${input_dim})
+            integer nterms
             integer nterms1
 
             real*8 rscale2(nvcount)
