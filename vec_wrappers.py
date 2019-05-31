@@ -396,7 +396,7 @@ def gen_vector_wrappers():
             real*8 theta(nvcount)
             """,
             ["ier", "rotmat"])
-    
+
     # }}}
 
     # {{{ special functions
@@ -876,7 +876,7 @@ def gen_vector_wrappers():
                 extra_args=eqn.in_arg_decls(with_intent=False),
                 input_dim="*INDIRECT_MANY",
                 )
-        
+
         gen_vector_wrapper(
                 func_name,
                 args,
