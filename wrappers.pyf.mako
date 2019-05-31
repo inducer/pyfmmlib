@@ -253,6 +253,17 @@ python module _internal
     end subroutine h2dterms
 
     ! }}}
+
+    ! {{{ rotation matrix construction
+
+    subroutine rotviarecur3p_init(ier,rotmat,ldc,theta)
+        integer, intent(out) :: ier
+        real*8, intent(out) :: rotmat(0:ldc,0:ldc,-ldc:ldc)
+        integer, intent(in) :: ldc
+        real*8 intent(in) :: theta
+    end subroutine rotviarecur3p_init
+
+    ! }}}
     
     ! {{{ generated vectorized wrappers
 
