@@ -309,6 +309,17 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
         else:
             yield "  %s, intent(%s) :: %s" % (type_, intent, name)
 
+    # Make sure output reduction variables have been initialized at least once -
+    # it is not guaranteed that the called routines will write to all entries of
+    # the variable.
+    if has_indirect_many:
+        for type_, name, shape in args:
+            if (has_indirect_many and
+                    name in out_args and
+                    MANY_MARKER not in shape):
+                tmp = name + "_tmp"
+                yield "  %s = 0" % tmp
+
     extra_omp = ""
     if has_indirect:
         extra_omp = " schedule(dynamic, %d)" % omp_chunk_size
@@ -608,6 +619,8 @@ def gen_vector_wrappers():
                         ! ------------------ code
 
                         ier = 0
+                        ier_tmp = 0
+                        expn_tmp = 0
 
                         !$omp parallel do default(none) schedule(dynamic, 10) &
                         !$omp private(tgt_icenter, center, rscale, itgt_box, &
