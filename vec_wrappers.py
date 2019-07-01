@@ -309,6 +309,17 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
         else:
             yield "  %s, intent(%s) :: %s" % (type_, intent, name)
 
+    # Make sure output reduction variables have been initialized at least once -
+    # it is not guaranteed that the called routines will write to all entries of
+    # the variable.
+    if has_indirect_many:
+        for type_, name, shape in args:
+            if (has_indirect_many and
+                    name in out_args and
+                    MANY_MARKER not in shape):
+                tmp = name + "_tmp"
+                yield "  %s = 0" % tmp
+
     extra_omp = ""
     if has_indirect:
         extra_omp = " schedule(dynamic, %d)" % omp_chunk_size
@@ -317,11 +328,13 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
 
     if has_indirect_many:
         private_vars = ["icsr", "ncsr_count"]
+        firstprivate_vars = []
         for type_, name, shape in args:
             if shape and name in out_args and MANY_MARKER not in shape:
-                private_vars.append(name + "_tmp")
+                firstprivate_vars.append(name + "_tmp")
 
         extra_omp += " private(%s)" % ", ".join(private_vars)
+        extra_omp += " firstprivate(%s)" % ", ".join(firstprivate_vars)
 
     shared_vars = ["nvcount"]
     for type_, name, shape in args:
@@ -608,11 +621,14 @@ def gen_vector_wrappers():
                         ! ------------------ code
 
                         ier = 0
+                        ier_tmp = 0
+                        expn_tmp = 0
 
                         !$omp parallel do default(none) schedule(dynamic, 10) &
                         !$omp private(tgt_icenter, center, rscale, itgt_box, &
                         !$omp   isrc_box_start, isrc_box_stop, src_ibox, &
-                        !$omp   isrc_start, expn_tmp, ier_tmp) &
+                        !$omp   isrc_start) &
+                        !$omp firstprivate(expn_tmp, ier_tmp) &
                         !$omp shared(ier,  ${eqn.in_arg_list()|cpost} &
                         !$omp   nsources, sources, &
                                     %if dp_or_no:
