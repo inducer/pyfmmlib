@@ -242,7 +242,7 @@ python module _internal
         integer, intent(out) :: nterms
         integer, intent(out) :: ier
     end subroutine l2dterms
-    
+
     subroutine h2dterms(size,zk,eps,nterms,ier)
         ! implicit real *8 (a-h,o-z)
         real*8, intent(in) :: size
@@ -251,6 +251,21 @@ python module _internal
         integer, intent(out) :: nterms
         integer, intent(out) :: ier
     end subroutine h2dterms
+
+    subroutine l3dterms(eps,nterms,ier)
+        real*8, intent(in) :: eps
+        integer, intent(out) :: nterms
+        integer, intent(out) :: ier
+    end subroutine l3dterms
+
+    subroutine h3dterms(size_bn,zk,eps,nterms,ier)
+        ! implicit real *8 (a-h,o-z)
+        real*8, intent(in) :: size_bn
+        complex*16, intent(in) :: zk
+        real*8, intent(in) :: eps
+        integer, intent(out) :: nterms
+        integer, intent(out) :: ier
+    end subroutine h3dterms
 
     ! }}}
 
@@ -264,7 +279,7 @@ python module _internal
     end subroutine rotviarecur3p_init
 
     ! }}}
-    
+
     ! {{{ generated vectorized wrappers
 
     ${gen_vector_wrappers()}
