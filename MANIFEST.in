@@ -1,5 +1,6 @@
 include COPYING
 include README.rst
+include aksetup_helper.py
 include codegen_helpers.py
 include vec_wrappers.py
 include wrappers.pyf.mako

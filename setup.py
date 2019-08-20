@@ -40,6 +40,9 @@ DASH_SEPARATOR = 75 * "-"
 
 
 def main():
+    from aksetup_helper import check_git_submodules
+    check_git_submodules()
+
     import os
     build_mode = os.environ.get("PYFMMLIB_BUILD_MODE", "openmp-ofast")
 
