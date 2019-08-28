@@ -44,7 +44,7 @@ def main():
     check_git_submodules()
 
     import os
-    build_mode = os.environ.get("PYFMMLIB_BUILD_MODE", "openmp-ofast")
+    build_mode = os.environ.get("PYFMMLIB_BUILD_MODE", "openmp-opt")
 
     if build_mode == "openmp-ofast":
         FOPT_ARGS = "-Ofast -fopenmp"
