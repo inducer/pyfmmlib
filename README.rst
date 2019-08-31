@@ -2,9 +2,14 @@ pyfmmlib: A Python Interface to FMMLIB
 ======================================
 
 .. image:: https://gitlab.tiker.net/inducer/pyfmmlib/badges/master/pipeline.svg
-   :target: https://gitlab.tiker.net/inducer/pyfmmlib/commits/master
+    :alt: Gitlab Build Status
+    :target: https://gitlab.tiker.net/inducer/pyfmmlib/commits/master
+.. image:: https://dev.azure.com/ak-spam/inducer/_apis/build/status/inducer.pyfmmlib?branchName=master
+    :alt: Azure Build Status
+    :target: https://dev.azure.com/ak-spam/inducer/_build/latest?definitionId=11&branchName=master
 .. image:: https://badge.fury.io/py/pyfmmlib.png
-    :target: http://pypi.python.org/pypi/pyfmmlib
+    :alt: Python Package Index Release Page
+    :target: https://pypi.org/project/pyfmmlib/
 
 pyfmmlib is a Python wrapper for `fmmlib2d
 <https://cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html>`_ and `fmmlib3d
