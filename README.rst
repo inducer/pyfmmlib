@@ -4,9 +4,9 @@ pyfmmlib: A Python Interface to FMMLIB
 .. image:: https://gitlab.tiker.net/inducer/pyfmmlib/badges/master/pipeline.svg
     :alt: Gitlab Build Status
     :target: https://gitlab.tiker.net/inducer/pyfmmlib/commits/master
-.. image:: https://github.com/inducer/pyfmmlib/workflows/CI/badge.svg?branch=master
+.. image:: https://github.com/inducer/pyfmmlib/workflows/CI/badge.svg?branch=master&event=push
     :alt: Github Build Status
-    :target: https://github.com/inducer/pyfmmlib/actions?query=branch%3Amaster+workflow%3ACI
+    :target: https://github.com/inducer/pyfmmlib/actions?query=branch%3Amaster+workflow%3ACI+event%3Apush
 .. image:: https://badge.fury.io/py/pyfmmlib.png
     :alt: Python Package Index Release Page
     :target: https://pypi.org/project/pyfmmlib/
