@@ -146,7 +146,7 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
     if not what:
         return ()
 
-    if target is None and any(l.isupper() for l in what):
+    if target is None and any(ch.isupper() for ch in what):
         raise RuntimeError("must specify target if on-target computation desired")
 
     if target is None:
