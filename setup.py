@@ -177,7 +177,7 @@ def main():
               ],
 
           packages=["pyfmmlib"],
-          python_requires="~3.6",
+          python_requires="~=3.6",
           setup_requires=[
               "numpy",
               ],
