@@ -37,7 +37,12 @@ jobs:
             run: |
                 EXTRA_INSTALL="numpy mako"
                 export PYFMMLIB_BUILD_MODE=setuptools
-                export FC=gfortran-9
+                echo ----------------------------------------------
+                echo "DEBUGGLES"
+                which gcc-9 || true
+                which gfortran-9 || true
+                export F77=gfortran-9
+                echo ----------------------------------------------
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
                 . ./build-and-test-py-project.sh
 
