@@ -39,6 +39,8 @@ jobs:
                 export PYFMMLIB_BUILD_MODE=setuptools
                 echo ----------------------------------------------
                 echo "DEBUGGLES"
+                which gcc
+                gcc --version
                 echo $PATH
                 find / -name 'gfortran'
                 echo ----------------------------------------------
