@@ -12,3 +12,14 @@ Python 3:
   artifacts:
     reports:
       junit: test/pytest.xml
+
+Python 3 Examples:
+  script:
+  - export EXTRA_INSTALL="numpy mako matplotlib"
+  - curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-py-project-and-run-examples.sh
+  - ". ./build-py-project-and-run-examples.sh"
+  tags:
+  - python3
+  - gfortran
+  except:
+  - tags
