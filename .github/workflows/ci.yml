@@ -57,9 +57,8 @@ jobs:
         -   name: "Main Script"
             run: |
                 EXTRA_INSTALL="numpy mako"
-                sudo apt update
-                sudo apt install gfortran-7
-                sudo ln -s /usr/bin/gfortran-7 /usr/bin/gfortran
+                export F77=gfortran-9
+                export F90=gfortran-9
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-and-test-py-project.sh
                 . ./build-and-test-py-project.sh
 
@@ -75,8 +74,7 @@ jobs:
         -   name: "Main Script"
             run: |
                 EXTRA_INSTALL="numpy mako matplotlib"
-                sudo apt update
-                sudo apt install gfortran-7
-                sudo ln -s /usr/bin/gfortran-7 /usr/bin/gfortran
+                export F77=gfortran-9
+                export F90=gfortran-9
                 curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/master/build-py-project-and-run-examples.sh
                 . ./build-py-project-and-run-examples.sh
