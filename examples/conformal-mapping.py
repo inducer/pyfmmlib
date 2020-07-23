@@ -286,7 +286,7 @@ def test_versus_ellipse_ref(visualize=True):
     map_vals = cauchy_integral(correspondence, test_points)
     ref_map_vals = cauchy_integral(ref_correspondence, test_points)
 
-    logger.info("Absolute error on boundary: %e",
+    logger.info("Absolute error at test points: %e",
           np.max(np.abs(map_vals - ref_map_vals)))
 
     assert np.allclose(map_vals, ref_map_vals)
