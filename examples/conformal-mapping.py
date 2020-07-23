@@ -336,7 +336,7 @@ def rho_cranioid(x):
 
 # {{{ solve and plot example
 
-def show_example(rho, n=2048):
+def show_example(rho, n=8192):
     corr = compute_boundary_correspondence(rho, n)
     spider_plot(corr)
     plt.show()
