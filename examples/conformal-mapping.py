@@ -282,17 +282,17 @@ def test_versus_ellipse_ref(visualize=True):
 
     assert np.allclose(correspondence, ref_correspondence)
 
-    test_points = 0.9 * np.exp(np.linspace(0, 2j * np.pi, 100, endpoint=False))
-    map_vals = cauchy_integral(correspondence, test_points)
-    ref_map_vals = cauchy_integral(ref_correspondence, test_points)
+    test_pts = 0.9 * np.exp(np.linspace(0, 2j * np.pi, 100, endpoint=False))
+    map_vals_at_test_pts = cauchy_integral(correspondence, test_pts)
+    ref_map_vals_at_test_pts = cauchy_integral(ref_correspondence, test_pts)
 
     logger.info("Absolute error at test points: %e",
-          np.max(np.abs(map_vals - ref_map_vals)))
+          np.max(np.abs(map_vals_at_test_pts - ref_map_vals_at_test_pts)))
 
-    assert np.allclose(map_vals, ref_map_vals)
+    assert np.allclose(map_vals_at_test_pts, ref_map_vals_at_test_pts)
 
     if visualize:
-        spider_plot(map_vals)
+        spider_plot(correspondence)
         outfile = "ellipse-map.png"
         plt.savefig(outfile)
         logger.info("Wrote '%s'", outfile)
