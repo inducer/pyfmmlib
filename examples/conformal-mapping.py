@@ -27,7 +27,6 @@ THE SOFTWARE.
 from functools import partial
 import logging
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pyfmmlib
 
@@ -176,6 +175,7 @@ def spider_plot(correspondence):
     targets = np.array(targets)
     mapvals = cauchy_integral(correspondence, targets)
 
+    import matplotlib.pyplot as plt
     ax = plt.gca()
     norm = plt.Normalize(0, 2*np.pi)
 
@@ -219,7 +219,7 @@ def ellipkinc(phi, m):
     implementation supports complex *phi*.
     """
 
-    # See: http://www.mygeodesy.id.au/documents/Elliptic%20Integrals%20and%20Landen%27s%20Transformation.pdf
+    # See: http://www.mygeodesy.id.au/documents/Elliptic%20Integrals%20and%20Landen%27s%20Transformation.pdf  # noqa: E501
     m = np.sqrt(m)
     factor = 1 / m
     while not np.isclose(m, 1, atol=1e-15, rtol=1e-15):
@@ -230,7 +230,7 @@ def ellipkinc(phi, m):
     return np.sqrt(factor) * np.log(np.tan(np.pi / 4 + phi / 2))
 
 
-def K(x, k):
+def K(x, k):  # noqa: N802
     """Alternative definition for the incomplete elliptic integral of the first
     kind.
     """
@@ -292,6 +292,7 @@ def test_versus_ellipse_ref(visualize=True):
     assert np.allclose(map_vals_at_test_pts, ref_map_vals_at_test_pts)
 
     if visualize:
+        import matplotlib.pyplot as plt
         spider_plot(correspondence)
         outfile = "ellipse-map.png"
         plt.savefig(outfile)
@@ -337,6 +338,7 @@ def rho_cranioid(x):
 # {{{ solve and plot example
 
 def show_example(rho, n=8192):
+    import matplotlib.pyplot as plt
     corr = compute_boundary_correspondence(rho, n)
     spider_plot(corr)
     plt.show()
