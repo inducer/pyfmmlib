@@ -348,5 +348,15 @@ def show_example(rho, n=8192):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    test_versus_ellipse_ref(visualize=True)
+
+    try:
+        import matplotlib  # noqa: F401
+    except ImportError:
+        from warnings import warn
+        warn("matplotlib not installed, not visualizing")
+        visualize = False
+    else:
+        visualize = True
+
+    test_versus_ellipse_ref(visualize=visualize)
     # show_example(rho_peanut)
