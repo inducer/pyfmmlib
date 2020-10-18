@@ -4,7 +4,6 @@
 
 from pyfmmlib import fmm_part, HelmholtzKernel
 import numpy as np
-import matplotlib.pyplot as pt
 
 
 def main():
@@ -19,10 +18,15 @@ def main():
 
     pot = pot.reshape(pot_shape)
 
-    pt.imshow(pot.real)
-    outfile = "helmholtz-potential.png"
-    pt.savefig(outfile)
-    print("wrote '%s'" % outfile)
+    try:
+        import matplotlib.pyplot as pt
+    except ImportError:
+        print("matplotlib not installed, not plotting")
+    else:
+        pt.imshow(pot.real)
+        outfile = "helmholtz-potential.png"
+        pt.savefig(outfile)
+        print("wrote '%s'" % outfile)
 
 
 if __name__ == "__main__":
