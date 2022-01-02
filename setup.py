@@ -187,7 +187,9 @@ def main():
         packages=find_packages(),
         python_requires="~=3.6",
         setup_requires=[
-            "numpy",
+            # https://github.com/numpy/numpy/issues/20709
+            # /!\ also in requirements.txt
+            "numpy != 1.22.0",
         ],
         ext_modules=[
             Extension(
