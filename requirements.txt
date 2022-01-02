@@ -1,0 +1,2 @@
+# https://github.com/numpy/numpy/issues/20709, also in setup.py
+numpy != 1.22.0
