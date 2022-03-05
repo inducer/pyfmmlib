@@ -17,3 +17,5 @@ distribute*.egg
 .cache
 
 .eggs
+
+wheelhouse
