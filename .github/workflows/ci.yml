@@ -36,7 +36,7 @@ jobs:
                 python-version: "3.x"
         -   name: "Main Script"
             run: |
-                EXTRA_INSTALL="numpy mako"
+                EXTRA_INSTALL="numpy=1.21.* mako setuptools<65"
                 export PYFMMLIB_BUILD_MODE=setuptools
                 export F77=gfortran-9
                 export F90=gfortran-9
