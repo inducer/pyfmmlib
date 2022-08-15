@@ -1,0 +1,8 @@
+[build-system]
+requires = [
+    "setuptools<60",
+    "wheel",
+    "oldest-supported-numpy",
+    "numpy!=1.22.0",
+    "mako",
+]
