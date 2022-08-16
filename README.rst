@@ -10,6 +10,9 @@ pyfmmlib: A Python Interface to FMMLIB
 .. image:: https://badge.fury.io/py/pyfmmlib.png
     :alt: Python Package Index Release Page
     :target: https://pypi.org/project/pyfmmlib/
+.. image:: https://zenodo.org/badge/8921021.svg
+    :alt: Zenodo DOI for latest release
+    :target: https://zenodo.org/badge/latestdoi/8921021
 
 pyfmmlib is a Python wrapper for `fmmlib2d
 <https://cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html>`_ and `fmmlib3d
