@@ -36,6 +36,8 @@ jobs:
                 python-version: "3.x"
         -   name: "Main Script"
             run: |
+                export SETUPTOOLS_USE_DISTUTILS=stdlib
+
                 EXTRA_INSTALL="numpy mako"
                 export PYFMMLIB_BUILD_MODE=setuptools
                 export F77=gfortran-9
@@ -57,6 +59,8 @@ jobs:
                 python-version: ${{ matrix.python-version }}
         -   name: "Main Script"
             run: |
+                export SETUPTOOLS_USE_DISTUTILS=stdlib
+
                 EXTRA_INSTALL="numpy mako"
                 export F77=gfortran-9
                 export F90=gfortran-9
@@ -74,6 +78,8 @@ jobs:
                 python-version: "3.x"
         -   name: "Main Script"
             run: |
+                export SETUPTOOLS_USE_DISTUTILS=stdlib
+
                 EXTRA_INSTALL="numpy mako"
                 export F77=gfortran-9
                 export F90=gfortran-9
