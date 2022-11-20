@@ -22,7 +22,7 @@ jobs:
                 python-version: "3.8"
         -   name: "Main Script"
             run: |
-                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
+                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
                 . ./prepare-and-run-flake8.sh "$(basename $GITHUB_REPOSITORY)" test examples
 
     pytest-macos:
@@ -42,7 +42,7 @@ jobs:
                 export PYFMMLIB_BUILD_MODE=setuptools
                 export F77=gfortran-9
                 export F90=gfortran-9
-                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
+                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
                 . ./build-and-test-py-project.sh
 
     pytest:
@@ -64,7 +64,7 @@ jobs:
                 EXTRA_INSTALL="numpy mako"
                 export F77=gfortran-9
                 export F90=gfortran-9
-                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
+                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
                 . ./build-and-test-py-project.sh
 
     examples:
@@ -83,5 +83,5 @@ jobs:
                 EXTRA_INSTALL="numpy mako"
                 export F77=gfortran-9
                 export F90=gfortran-9
-                curl -L -O -k https://gitlab.tiker.net/inducer/ci-support/raw/main/build-py-project-and-run-examples.sh
+                curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-py-project-and-run-examples.sh
                 . ./build-py-project-and-run-examples.sh
