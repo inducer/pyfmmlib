@@ -40,8 +40,8 @@ jobs:
 
                 EXTRA_INSTALL="numpy mako"
                 export PYFMMLIB_BUILD_MODE=setuptools
-                export F77=gfortran-9
-                export F90=gfortran-9
+                export F77=gfortran-12
+                export F90=gfortran-12
                 curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
                 . ./build-and-test-py-project.sh
 
@@ -62,8 +62,6 @@ jobs:
                 export SETUPTOOLS_USE_DISTUTILS=stdlib
 
                 EXTRA_INSTALL="numpy mako"
-                export F77=gfortran-9
-                export F90=gfortran-9
                 curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
                 . ./build-and-test-py-project.sh
 
