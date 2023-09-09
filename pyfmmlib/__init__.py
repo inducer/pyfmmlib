@@ -348,11 +348,16 @@ def fmm_tria(what, iprec, kernel, mesh, slp_density=None, dlp_density=None,
         vertices.  `normals` is a `(n,3)`-shape array with normals, and
         `centroids is a `(n,3)`-shape array with centroids.
     """
+    N = len(mesh.triangles)
+    assert mesh.triangles.shape == (N,3,3)
+    assert mesh.centroids.shape == (N,3)
+    assert mesh.normals.shape == (N,3)
+     
     force_hess = dipvec is not None
 
     if dipvec is None:
-        dipvec = mesh.normals.T
-
+        dipvec = mesh.normals
+    
     _, dimensions = mesh.centroids.shape
 
     return _fmm(dimensions, len(mesh), "tria",
