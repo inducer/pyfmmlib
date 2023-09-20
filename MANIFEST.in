@@ -18,3 +18,5 @@ include fmmlib2d/src/*.f
 include fmmlib3d/COPYING
 include fmmlib3d/README
 include fmmlib3d/src/*.f
+
+include CITATION.cff
