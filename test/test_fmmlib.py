@@ -1,8 +1,9 @@
 from __future__ import division
 
-from pyfmmlib import fmm_part
+from pyfmmlib import fmm_part, fmm_tria, LaplaceKernel
 import numpy as np
 import numpy.linalg as la
+from scipy.integrate import dblquad
 
 
 def test_fmm():
@@ -21,6 +22,58 @@ def test_fmm():
             fmm_part("PG", iprec=1, kernel=kernel,
                     sources=sources, mop_charge=1, target=targets.T,
                     debug=True)
+
+
+def test_triangle():
+    n = 3
+    triangles = np.random.rand(n, 3, 3)
+    centroids = np.mean(triangles, axis=1)
+
+    normals = np.cross(
+        triangles[:, 2]-triangles[:, 0],
+        triangles[:, 1]-triangles[:, 0])
+
+    normals /= np.linalg.norm(normals, axis=0)
+
+    charges = np.random.rand(n)
+
+    class Mesh:
+        def __init__(self, triangles, normals, centroids):
+            self.triangles = triangles
+            self.normals = normals
+            self.centroids = centroids
+
+        def __len__(self):
+            return len(self.triangles)
+
+    # Return the exact value for triangle at index i,
+    # using a slow but accurate adaptive integration
+    def exact(i):
+
+        target = centroids[i]
+
+        def to_integrate(a, b, j):
+            v1, v2, v3 = triangles[j]
+
+            location = v1 + (v3-v1)*a + (v2-v1)*b
+            r = np.linalg.norm(location-target)
+            area = np.linalg.norm(np.cross(v3-v1, v2-v1))
+
+            return area/(4*np.pi*r)
+
+        potential = 0.
+
+        for j in range(n):
+            potential += charges[j]*dblquad(to_integrate, 0, 1, 0,
+                lambda y: 1-y, args=(j,))[0]
+
+        return potential
+
+    m = Mesh(triangles, normals, centroids)
+    result_fmm = fmm_tria("p", 0, LaplaceKernel(), m, slp_density=charges).real[0]
+    result_exact = exact(0)
+
+    assert np.isclose(result_fmm, result_exact)
 
 
 def test_translations():

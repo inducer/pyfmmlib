@@ -92,7 +92,7 @@ python module _internal
     if dim == 3:
         kinds = [
           "part",
-          #"tria"
+          "tria"
           ]
     else:
         kinds = ["part"]
