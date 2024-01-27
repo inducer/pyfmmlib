@@ -1,36 +1,55 @@
 [build-system]
 build-backend = "mesonpy"
 requires = [
-        "meson-python",
-        "oldest-supported-numpy",
-        "numpy!=1.22.0",
-        "mako"]
+    "mako",
+    "meson-python",
+    "oldest-supported-numpy",
+    "wheel",
+]
 
 [project]
 name = "pyfmmlib"
-version = "2023.1"
+version = "2024.1"
 description = "Python wrappers for particle FMMs"
-readme = "README.rst"
-requires-python = ">=3.8"
+readme= "README.rst"
+license = { text = "MIT" }
+maintainers = [{ name = "Andreas Kloeckner", email = "inform@tiker.net" }]
 authors = [
-  {name = "Leslie Greengard"},
-  {name = "Zydrunas Gimbutas"},
-  {name = 'Andreas Kloeckner', email="inform@tiker.net"},
-]
+    { name = "Andreas Kloeckner", email = "inform@tiker.net" },
+    { name = "Leslie Greengard" },
+    { name = "Zydrunas Gimbutas" },
+    { name = "Alex Fikl", email = "alexfikl@gmail.com" },
+    ]
+requires-python = ">=3.8"
 classifiers = [
-        "Development Status :: 4 - Beta",
-        "Intended Audience :: Developers",
-        "Intended Audience :: Other Audience",
-        "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: MIT License",
-        "License :: OSI Approved :: BSD License",
-        "Programming Language :: Fortran",
-        "Programming Language :: Python",
-        "Topic :: Scientific/Engineering",
-        "Topic :: Scientific/Engineering :: Mathematics",
-        "Topic :: Software Development :: Libraries",
-        ]
-license = "wrapper: MIT/code: 3-clause BSD"
-
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Other Audience",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Fortran",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = [
+    "numpy",
+]
+[project.optional-dependencies]
+dev = [
+    "flake8",
+    "flake8-bugbear",
+    "flake8-isort",
+    "flake8-quotes",
+    "isort",
+    "pep8-naming",
+]
 [project.urls]
-homepage = "https://github.com/inducer/pyfmmlib"
+Repository = "https://github.com/inducer/pyfmmlib"

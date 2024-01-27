@@ -1,18 +1,20 @@
 Flake8:
-  script:
-  - curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
-  - . ./prepare-and-run-flake8.sh "$CI_PROJECT_NAME" test examples
+  script: |
+    PROJECT_INSTALL_FLAGS="--no-build-isolation"
+    curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
+    . ./prepare-and-run-flake8.sh "$CI_PROJECT_NAME" test examples
   tags:
   - python3
   except:
   - tags
 
 Python 3:
-  script:
-  - py_version=3
-  - EXTRA_INSTALL="numpy mako scipy"
-  - curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
-  - ". ./build-and-test-py-project.sh"
+  script: |
+    py_version=3
+    PROJECT_INSTALL_FLAGS="--no-build-isolation"
+    EXTRA_INSTALL="numpy meson-python ninja mako scipy"
+    curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-and-test-py-project.sh
+    . ./build-and-test-py-project.sh
   tags:
   - python3
   - gfortran
@@ -23,10 +25,11 @@ Python 3:
       junit: test/pytest.xml
 
 Python 3 Examples:
-  script:
-  - export EXTRA_INSTALL="numpy mako scipy"
-  - curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-py-project-and-run-examples.sh
-  - ". ./build-py-project-and-run-examples.sh"
+  script: |
+    PROJECT_INSTALL_FLAGS="--no-build-isolation"
+    EXTRA_INSTALL="numpy meson-python ninja mako"
+    curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/build-py-project-and-run-examples.sh
+    . ./build-py-project-and-run-examples.sh
   tags:
   - python3
   - gfortran

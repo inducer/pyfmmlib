@@ -909,6 +909,17 @@ def gen_vector_wrappers():
 
 
 if __name__ == "__main__":
-    print(gen_vector_wrappers())
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("output", nargs="?", default=None)
+    args = parser.parse_args()
+
+    result = gen_vector_wrappers()
+    if args.output:
+        with open(args.output, "w", encoding="utf-8") as fp:
+            fp.write(result)
+    else:
+        print(result)
 
 # vim: foldmethod=marker

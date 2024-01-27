@@ -1,6 +1,7 @@
 *zip
 *~
 .*.swp
+fortranobject.c
 _internalmodule.c
 *.pyc
 wrappers.pyf
