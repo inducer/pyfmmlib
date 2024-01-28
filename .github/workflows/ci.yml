@@ -24,7 +24,7 @@ jobs:
             run: |
                 PROJECT_INSTALL_FLAGS="--no-build-isolation"
                 curl -L -O https://gitlab.tiker.net/inducer/ci-support/raw/main/prepare-and-run-flake8.sh
-                . ./prepare-and-run-flake8.sh "$(basename $GITHUB_REPOSITORY)" test examples
+                . ./prepare-and-run-flake8.sh "$(basename $GITHUB_REPOSITORY)" test examples vec_wrappers.py
 
     pytest-macos:
         name: Pytest on macOS
