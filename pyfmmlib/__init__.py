@@ -1,4 +1,3 @@
-from __future__ import division, print_function
 
 import numpy as np
 
@@ -37,7 +36,7 @@ hessian_index_lookup = {
 
 # {{{ kernel classes
 
-class KernelBase(object):
+class KernelBase:
     flag_value = 1
 
     def __hash__(self):
