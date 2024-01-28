@@ -58,14 +58,14 @@ def with_sub(name, sub):
 
 
 def pad_fortran(line, width):
-    line += ' ' * (width - 1 - len(line))
-    line += '&'
+    line += " " * (width - 1 - len(line))
+    line += "&"
     return line
 
 
-def wrap_line_base(line, level=0, width=80, indentation='    ',
+def wrap_line_base(line, level=0, width=80, indentation="    ",
                    pad_func=lambda string, amount: string,
-                   lex_func=functools.partial(shlex.split, posix=False)):
+                   lex_func=None):
     """
     The input is a line of code at the given indentation level. Return the list
     of lines that results from wrapping the line to the given width. Lines
@@ -76,11 +76,14 @@ def wrap_line_base(line, level=0, width=80, indentation='    ',
     The `pad_func` argument is a function that adds line continuations. The
     `lex_func` argument returns the list of tokens in the line.
     """
+    if lex_func is None:
+        lex_func = functools.partial(shlex.split, posix=False)
+
     tokens = lex_func(line)
     resulting_lines = []
     at_line_start = True
     indentation_len = len(level * indentation)
-    current_line = ''
+    current_line = ""
     padding_width = width - indentation_len
     for index, word in enumerate(tokens):
         has_next_word = index < len(tokens) - 1
@@ -89,7 +92,7 @@ def wrap_line_base(line, level=0, width=80, indentation='    ',
             next_len = indentation_len + len(current_line) + 1 + word_len
             if next_len < width or (not has_next_word and next_len == width):
                 # The word goes on the same line.
-                current_line += ' ' + word
+                current_line += " " + word
             else:
                 # The word goes on the next line.
                 resulting_lines.append(pad_func(current_line, padding_width))
@@ -111,7 +114,7 @@ def generate_loop(func_name, args, out_args, has_indirect_many,
     yield ind + "do ivcount = 1, nvcount"
 
     if has_indirect_many:
-        for type_, name, shape in args:
+        for _type, name, shape in args:
             if shape and MANY_MARKER in shape:
                 yield (ind + "  ncsr_count = "
                         "%(name)s_starts(ivcount+1) "
@@ -144,7 +147,7 @@ def generate_loop(func_name, args, out_args, has_indirect_many,
         else:
             return "1"
 
-    for type_, name, shape in args:
+    for _type, name, shape in args:
         if has_indirect_many and name in out_args and MANY_MARKER not in shape:
             call_args.append(with_sub(name + "_tmp",
                 [gen_first_index(name, shape_dim)
@@ -162,25 +165,25 @@ def generate_loop(func_name, args, out_args, has_indirect_many,
     call_ind = ind + "    "
 
     if has_indirect_many:
-        for type_, name, shape in args:
-            if (has_indirect_many and
-                    name in out_args and
-                    MANY_MARKER not in shape):
+        for _type, name, shape in args:
+            if (has_indirect_many
+                    and name in out_args
+                    and MANY_MARKER not in shape):
                 tmp = name + "_tmp"
 
                 if name in tmp_init:
                     yield call_ind + "%s = %s" % (tmp, tmp_init[name])
 
-    for l in wrap_line(
+    for line in wrap_line(
             "%scall %s(%s)" % (call_ind, func_name, ", ".join(call_args)),
             indentation="  "):
-        yield call_ind + l
+        yield call_ind + line
 
     if has_indirect_many:
-        for type_, name, shape in args:
-            if (has_indirect_many and
-                    name in out_args and
-                    MANY_MARKER not in shape):
+        for _type, name, shape in args:
+            if (has_indirect_many
+                    and name in out_args
+                    and MANY_MARKER not in shape):
                 tgt_sub = [
                         ":" if shape_dim != "nvcount" else "ivcount"
                         for shape_dim in shape
@@ -219,8 +222,7 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
         if isinstance(arg_order, string_types):
             arg_order = [x.strip() for x in arg_order.split(",")]
 
-        arg_dict = dict((name, (type_, shape))
-                for type_, name, shape in args)
+        arg_dict = {name: (type_, shape) for type_, name, shape in args}
 
         args = []
         for arg in arg_order:
@@ -235,14 +237,14 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
 
     # }}}
 
-    all_args = set(name for type_, name, shape in args)
+    all_args = {name for _type, name, _shape in args}
     in_args = all_args-set(out_args)
 
     has_indirect = False
     has_indirect_many = False
 
     passed_args_names = []
-    for type_, name, shape in args:
+    for _type, name, shape in args:
         passed_args_names.append(name)
         if shape_has_indirect(shape):
             passed_args_names.append(name+"_offsets")
@@ -260,11 +262,11 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
 
     # {{{ code generation
 
-    for l in wrap_line(
+    for line in wrap_line(
             "subroutine %s(%s)" % (
                 vec_func_name,
                 ", ".join(passed_args_names + ["nvcount"]))):
-        yield l
+        yield line
 
     yield "  implicit none"
     yield "  integer, intent(in) :: nvcount"
@@ -284,9 +286,9 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
             processed_shape = ["0:*" if s_i in INDIRECT_MARKERS else s_i
                     for s_i in shape]
 
-            if (has_indirect_many and
-                    name in out_args and
-                    MANY_MARKER not in shape):
+            if (has_indirect_many
+                    and name in out_args
+                    and MANY_MARKER not in shape):
                 yield "  %s %s(%s)" % (
                         type_, name, ",".join(str(si) for si in processed_shape))
 
@@ -314,10 +316,10 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     # it is not guaranteed that the called routines will write to all entries of
     # the variable.
     if has_indirect_many:
-        for type_, name, shape in args:
-            if (has_indirect_many and
-                    name in out_args and
-                    MANY_MARKER not in shape):
+        for _type, name, shape in args:
+            if (has_indirect_many
+                    and name in out_args
+                    and MANY_MARKER not in shape):
                 tmp = name + "_tmp"
                 yield "  %s = 0" % tmp
 
@@ -330,7 +332,7 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     if has_indirect_many:
         private_vars = ["icsr", "ncsr_count"]
         firstprivate_vars = []
-        for type_, name, shape in args:
+        for _type, name, shape in args:
             if shape and name in out_args and MANY_MARKER not in shape:
                 firstprivate_vars.append(name + "_tmp")
 
@@ -338,7 +340,7 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
         extra_omp += " firstprivate(%s)" % ", ".join(firstprivate_vars)
 
     shared_vars = ["nvcount"]
-    for type_, name, shape in args:
+    for _type, name, shape in args:
         shared_vars.append(name)
         if shape and MANY_MARKER in shape:
             shared_vars.append(name + "_offsets")
@@ -351,18 +353,19 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     # generate loop
     yield ""
     yield "  if (nvcount .le. %d) then" % omp_chunk_size
-    for l in generate_loop(func_name, args, out_args, has_indirect_many,
-            output_reductions, tmp_init):
-        yield l
+    for line in generate_loop(func_name, args, out_args, has_indirect_many,
+                              output_reductions, tmp_init):
+        yield line
+
     yield "  else"
-    for l in wrap_line(
+    for line in wrap_line(
             "!$omp parallel do default(none)" + extra_omp,
             indentation="!$omp "):
-        yield "    " + l
+        yield "    " + line
 
-    for l in generate_loop(func_name, args, out_args, has_indirect_many,
-            output_reductions, tmp_init):
-        yield l
+    for line in generate_loop(func_name, args, out_args, has_indirect_many,
+                              output_reductions, tmp_init):
+        yield line
     yield "    !$omp end parallel do"
     yield "  endif"
 
@@ -386,8 +389,9 @@ def gen_vector_wrappers():
         from codegen_helpers import cpost, cpre
 
         tpl = Template(tpl_string, strict_undefined=True)
-        result.extend(l.rstrip()
-                for l in tpl.render(cpre=cpre, cpost=cpost, **kwargs).split("\n"))
+        result.extend(
+            line.rstrip()
+            for line in tpl.render(cpre=cpre, cpost=cpost, **kwargs).split("\n"))
 
     import codegen_helpers as cgh
 
