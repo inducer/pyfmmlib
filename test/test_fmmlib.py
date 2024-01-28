@@ -1,9 +1,10 @@
 from __future__ import division
 
-from pyfmmlib import fmm_part, fmm_tria, LaplaceKernel
 import numpy as np
 import numpy.linalg as la
 from scipy.integrate import dblquad
+
+from pyfmmlib import LaplaceKernel, fmm_part, fmm_tria
 
 
 def test_fmm():
@@ -89,8 +90,9 @@ def test_translations():
     targets_center = np.array([10, 0])
     targets = np.random.uniform(size=(n, 2)) - 0.5 + targets_center
 
-    from pyfmmlib import (h2dformmp, h2dmpmp_vec, h2dmploc_vec,
-            h2dlocloc_vec, h2dtaeval_vec, hpotgrad2dall_vec, h2dmpeval_vec)
+    from pyfmmlib import (
+        h2dformmp, h2dlocloc_vec, h2dmpeval_vec, h2dmploc_vec, h2dmpmp_vec,
+        h2dtaeval_vec, hpotgrad2dall_vec)
 
     ref_value, _, _ = hpotgrad2dall_vec(ifgrad=False, ifhess=False,
             sources=sources.T, charge=charges,

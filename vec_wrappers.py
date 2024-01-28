@@ -1,8 +1,9 @@
-import re
-import sys
-from mako.template import Template
 import functools
+import re
 import shlex
+import sys
+
+from mako.template import Template
 
 
 if sys.version_info < (3,):
@@ -382,7 +383,7 @@ def gen_vector_wrappers():
             result.append(line)
 
     def render_template(tpl_string, **kwargs):
-        from codegen_helpers import cpre, cpost
+        from codegen_helpers import cpost, cpre
 
         tpl = Template(tpl_string, strict_undefined=True)
         result.extend(l.rstrip()

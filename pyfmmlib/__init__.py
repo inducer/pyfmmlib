@@ -1,9 +1,10 @@
 from __future__ import division, print_function
+
+import numpy as np
+
 import pyfmmlib._internal as _int
 from pyfmmlib._internal import *  # noqa
 from pyfmmlib.version import VERSION_TEXT as __version__  # noqa
-
-import numpy as np
 
 
 # Map from matrix indices (i,j) in Hessian into output array of
