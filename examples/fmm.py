@@ -2,8 +2,9 @@
 """Computes a Helmholtz potential with the FMM.
 """
 
-from pyfmmlib import fmm_part, HelmholtzKernel
 import numpy as np
+
+from pyfmmlib import HelmholtzKernel, fmm_part
 
 
 def main():
