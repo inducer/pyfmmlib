@@ -1,15 +1,8 @@
 import functools
 import re
 import shlex
-import sys
 
 from mako.template import Template
-
-
-if sys.version_info < (3,):
-    string_types = basestring  # noqa
-else:
-    string_types = str
 
 
 # {{{ generation helpers
@@ -37,8 +30,8 @@ def parse_args(args):
         elif scalar_match is not None:
             yield type_str, scalar_match.group(1), ()
         else:
-            raise RuntimeError("arg parsing did not understand: %s"
-                    % names_and_shapes)
+            raise RuntimeError(
+                f"arg parsing did not understand: {names_and_shapes}")
 
 
 INDIRECT_MARKER = "*INDIRECT"
@@ -50,11 +43,12 @@ def shape_has_indirect(shape):
     return any(s_i in INDIRECT_MARKERS for s_i in shape)
 
 
-def with_sub(name, sub):
+def with_sub(name: str, sub: str) -> str:
     if not sub:
         return name
     else:
-        return "%s(%s)" % (name, ", ".join(sub))
+        sub = ", ".join(sub)
+        return f"{name}({sub})"
 
 
 def pad_fortran(line, width):
@@ -92,7 +86,7 @@ def wrap_line_base(line, level=0, width=80, indentation="    ",
             next_len = indentation_len + len(current_line) + 1 + word_len
             if next_len < width or (not has_next_word and next_len == width):
                 # The word goes on the same line.
-                current_line += " " + word
+                current_line += f" {word}"
             else:
                 # The word goes on the next line.
                 resulting_lines.append(pad_func(current_line, padding_width))
@@ -111,21 +105,19 @@ wrap_line = functools.partial(wrap_line_base, pad_func=pad_fortran)
 def generate_loop(func_name, args, out_args, has_indirect_many,
         output_reductions, tmp_init):
     ind = 4*" "
-    yield ind + "do ivcount = 1, nvcount"
+    yield f"{ind}do ivcount = 1, nvcount"
 
     if has_indirect_many:
         for _type, name, shape in args:
             if shape and MANY_MARKER in shape:
-                yield (ind + "  ncsr_count = "
-                        "%(name)s_starts(ivcount+1) "
-                        "- %(name)s_starts(ivcount)"
-                        % {"name": name})
+                yield (f"{ind}  ncsr_count = "
+                        f"{name}_starts(ivcount+1) - {name}_starts(ivcount)")
 
                 break
                 # FIXME: Check that other starts yield the
                 # same count.
 
-        yield ind + "  do icsr = 0, ncsr_count-1"
+        yield f"{ind}  do icsr = 0, ncsr_count-1"
 
     # {{{ assemble call_args
 
@@ -136,10 +128,9 @@ def generate_loop(func_name, args, out_args, has_indirect_many,
             return "ivcount"
 
         if str(shape_dim) == INDIRECT_MARKER:
-            return "%s_offsets(ivcount)" % name
+            return f"{name}_offsets(ivcount)"
         if str(shape_dim) == MANY_MARKER:
-            return ("%(name)s_offsets(%(name)s_starts(ivcount) + icsr)"
-                    % {"name": name})
+            return f"{name}_offsets({name}_starts(ivcount) + icsr)"
 
         colon_idx = str(shape_dim).find(":")
         if colon_idx != -1:
@@ -149,33 +140,33 @@ def generate_loop(func_name, args, out_args, has_indirect_many,
 
     for _type, name, shape in args:
         if has_indirect_many and name in out_args and MANY_MARKER not in shape:
-            call_args.append(with_sub(name + "_tmp",
+            call_args.append(with_sub(f"{name}_tmp",
                 [gen_first_index(name, shape_dim)
                     for shape_dim in shape
                     if shape_dim != "nvcount"]))
         elif not ("nvcount" in shape or shape_has_indirect(shape)):
             call_args.append(name)
         else:
-            call_args.append("%s(%s)" % (
-                name, ", ".join(gen_first_index(name, shape_dim)
-                    for shape_dim in shape)))
+            shape_str = ", ".join(gen_first_index(name, s) for s in shape)
+            call_args.append(f"{name}({shape_str})")
 
     # }}}
 
-    call_ind = ind + "    "
+    call_ind = f"{ind}    "
 
     if has_indirect_many:
         for _type, name, shape in args:
             if (has_indirect_many
                     and name in out_args
                     and MANY_MARKER not in shape):
-                tmp = name + "_tmp"
+                tmp = f"{name}_tmp"
 
                 if name in tmp_init:
-                    yield call_ind + "%s = %s" % (tmp, tmp_init[name])
+                    yield f"{call_ind}{tmp} = {tmp_init[name]}"
 
+    call_args_str = ", ".join(call_args)
     for line in wrap_line(
-            "%scall %s(%s)" % (call_ind, func_name, ", ".join(call_args)),
+            f"{call_ind}call {func_name}({call_args_str})",
             indentation="  "):
         yield call_ind + line
 
@@ -190,20 +181,20 @@ def generate_loop(func_name, args, out_args, has_indirect_many,
                         ]
 
                 tgt = with_sub(name, tgt_sub)
-                tmp = name + "_tmp"
+                tmp = f"{name}_tmp"
 
                 out_red = output_reductions[name]
                 if out_red == "sum":
-                    yield call_ind + "%s = %s + %s" % (tgt, tgt, tmp)
+                    yield f"{call_ind}{tgt} = {tgt} + {tmp}"
                 elif out_red == "max":
-                    yield call_ind + "%s = max(%s, %s)" % (tgt, tgt, tmp)
+                    yield f"{call_ind}{tgt} = max({tgt}, {tmp})"
 
                 else:
-                    raise ValueError("invalid output reduction: %s" % out_red)
+                    raise ValueError(f"invalid output reduction: {out_red}")
 
-        yield ind + "  enddo"
+        yield f"{ind}  enddo"
 
-    yield ind + "enddo"
+    yield f"{ind}enddo"
 
 
 def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
@@ -211,15 +202,15 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
         output_reductions=None, tmp_init=None, omp_chunk_size=10,
         out_only_args=()):
     if vec_func_name is None:
-        vec_func_name = func_name+"_vec"
+        vec_func_name = f"{func_name}_vec"
 
     # {{{ process args/arg_order
 
-    if isinstance(args, string_types):
+    if isinstance(args, str):
         args = list(parse_args(args))
 
     if arg_order is not None:
-        if isinstance(arg_order, string_types):
+        if isinstance(arg_order, str):
             arg_order = [x.strip() for x in arg_order.split(",")]
 
         arg_dict = {name: (type_, shape) for type_, name, shape in args}
@@ -230,7 +221,7 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
             args.append((type_, arg, shape))
 
         if not too_many_ok and arg_dict:
-            raise RuntimeError("too many args: %s" % ",".join(arg_dict))
+            raise RuntimeError(f"too many args: {','.join(arg_dict)}")
 
     del arg_order
     del too_many_ok
@@ -247,11 +238,11 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     for _type, name, shape in args:
         passed_args_names.append(name)
         if shape_has_indirect(shape):
-            passed_args_names.append(name+"_offsets")
+            passed_args_names.append(f"{name}_offsets")
             has_indirect = True
             if MANY_MARKER in shape:
                 has_indirect_many = True
-                passed_args_names.append(name+"_starts")
+                passed_args_names.append(f"{name}_starts")
 
     assert not (has_indirect_many and output_reductions is None)
     assert not (not has_indirect_many and output_reductions is not None)
@@ -262,10 +253,8 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
 
     # {{{ code generation
 
-    for line in wrap_line(
-            "subroutine %s(%s)" % (
-                vec_func_name,
-                ", ".join(passed_args_names + ["nvcount"]))):
+    call_args_str = ", ".join(passed_args_names + ["nvcount"])
+    for line in wrap_line(f"subroutine {vec_func_name}({call_args_str})"):
         yield line
 
     yield "  implicit none"
@@ -289,28 +278,27 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
             if (has_indirect_many
                     and name in out_args
                     and MANY_MARKER not in shape):
-                yield "  %s %s(%s)" % (
-                        type_, name, ",".join(str(si) for si in processed_shape))
+                shape_str = ",".join(str(si) for si in processed_shape)
+                yield f"  {type_} {name}({shape_str})"
 
                 intent = "in,out" if name not in out_only_args else "out"
-                yield "  !f2py intent(%s) %s" % (intent, name)
+                yield f"  !f2py intent({intent}) {name}"
 
                 tmp_shape = [s_i for s_i in shape if s_i != "nvcount"]
-                yield "  %s :: %s" % (
-                        type_, with_sub(name+"_tmp", tmp_shape))
+                tmp_name = with_sub(f"{name}_tmp", tmp_shape)
+                yield f"  {type_} :: {tmp_name}"
             else:
-                yield "  %s, intent(%s) :: %s(%s)" % (
-                        type_, intent, name, ",".join(
-                            str(si) for si in processed_shape))
+                shape_str = ",".join(str(si) for si in processed_shape)
+                yield f"  {type_}, intent({intent}) :: {name}({shape_str})"
 
             if INDIRECT_MARKER in shape:
-                yield "  integer, intent(in) :: %s_offsets(nvcount)" % name
+                yield f"  integer, intent(in) :: {name}_offsets(nvcount)"
             if MANY_MARKER in shape:
-                yield "  integer, intent(in) :: %s_offsets(0:*)" % name
-                yield "  integer, intent(in) :: %s_starts(nvcount+1)" % name
+                yield f"  integer, intent(in) :: {name}_offsets(0:*)"
+                yield f"  integer, intent(in) :: {name}_starts(nvcount+1)"
 
         else:
-            yield "  %s, intent(%s) :: %s" % (type_, intent, name)
+            yield f"  {type_}, intent({intent}) :: {name}"
 
     # Make sure output reduction variables have been initialized at least once -
     # it is not guaranteed that the called routines will write to all entries of
@@ -320,48 +308,48 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
             if (has_indirect_many
                     and name in out_args
                     and MANY_MARKER not in shape):
-                tmp = name + "_tmp"
-                yield "  %s = 0" % tmp
+                tmp = f"{name}_tmp"
+                yield f"  {tmp} = 0"
 
     extra_omp = ""
     if has_indirect:
-        extra_omp = " schedule(dynamic, %d)" % omp_chunk_size
+        extra_omp = f" schedule(dynamic, {omp_chunk_size})"
     else:
-        extra_omp = " schedule(static, %d)" % omp_chunk_size
+        extra_omp = f" schedule(static, {omp_chunk_size})"
 
     if has_indirect_many:
         private_vars = ["icsr", "ncsr_count"]
         firstprivate_vars = []
         for _type, name, shape in args:
             if shape and name in out_args and MANY_MARKER not in shape:
-                firstprivate_vars.append(name + "_tmp")
+                firstprivate_vars.append(f"{name}_tmp")
 
-        extra_omp += " private(%s)" % ", ".join(private_vars)
-        extra_omp += " firstprivate(%s)" % ", ".join(firstprivate_vars)
+        extra_omp += f" private({', '.join(private_vars)})"
+        extra_omp += f" firstprivate({', '.join(firstprivate_vars)})"
 
     shared_vars = ["nvcount"]
     for _type, name, shape in args:
         shared_vars.append(name)
         if shape and MANY_MARKER in shape:
-            shared_vars.append(name + "_offsets")
-            shared_vars.append(name + "_starts")
+            shared_vars.append(f"{name}_offsets")
+            shared_vars.append(f"{name}_starts")
         if shape and INDIRECT_MARKER in shape:
-            shared_vars.append(name + "_offsets")
+            shared_vars.append(f"{name}_offsets")
 
-    extra_omp += " shared(%s)" % ", ".join(shared_vars)
+    extra_omp += f" shared({', '.join(shared_vars)})"
 
     # generate loop
     yield ""
-    yield "  if (nvcount .le. %d) then" % omp_chunk_size
+    yield f"  if (nvcount .le. {omp_chunk_size}) then"
     for line in generate_loop(func_name, args, out_args, has_indirect_many,
                               output_reductions, tmp_init):
         yield line
 
     yield "  else"
     for line in wrap_line(
-            "!$omp parallel do default(none)" + extra_omp,
+            f"!$omp parallel do default(none){extra_omp}",
             indentation="!$omp "):
-        yield "    " + line
+        yield f"    {line}"
 
     for line in generate_loop(func_name, args, out_args, has_indirect_many,
                               output_reductions, tmp_init):
@@ -472,27 +460,26 @@ def gen_vector_wrappers():
                     charge_or_dip = "charge"
 
                 gen_vector_wrapper(
-                        "%(what)spot%(fld_or_grad)s%(dims)ddall%(dp_or_no)s"
-                        % locals(),
-                        """
-                        integer if%(fld_or_grad)s
+                        f"{what}pot{fld_or_grad}{dims}dall{dp_or_no}",
+                        f"""
+                        integer if{fld_or_grad}
                         integer ifhess
                         integer nsources
-                        real *8 sources(%(dims)d,nsources)
-                        real *8 targets(%(dims)d,nvcount)
+                        real *8 sources({dims},nsources)
+                        real *8 targets({dims},nvcount)
                         complex *16 charge(nsources)
                         complex *16 dipstr(nsources)
-                        real*8 dipvec(%(dims)d,nsources)
+                        real*8 dipvec({dims},nsources)
                         complex *16 zk
                         complex *16 pot(nvcount)
-                        complex *16 %(fld_or_grad)s(%(dims)d,nvcount)
-                        complex *16 hess(%(hess_dims)d,nvcount)
-                        """ % locals(), ["pot", fld_or_grad, "hess"],
+                        complex *16 {fld_or_grad}({dims},nvcount)
+                        complex *16 hess({hess_dims},nvcount)
+                        """, ["pot", fld_or_grad, "hess"],
                         arg_order=(
-                            "if%(fld_or_grad)s%(ifhess_or_no)s,sources,"
-                            "%(charge_or_dip)s,"
-                            "nsources,targets%(wavek_or_no)s,"
-                            "pot,%(fld_or_grad)s%(hess_or_no)s") % locals(),
+                            f"if{fld_or_grad}{ifhess_or_no},sources,"
+                            f"{charge_or_dip},"
+                            f"nsources,targets{wavek_or_no},"
+                            f"pot,{fld_or_grad}{hess_or_no}"),
                         too_many_ok=True)
 
     # }}}
@@ -502,7 +489,7 @@ def gen_vector_wrappers():
     for dp_or_no in ["", "_dp"]:
         for dims in [2, 3]:
             for eqn in [cgh.Laplace(dims), cgh.Helmholtz(dims)]:
-                func_name = "%s%ddformta%s" % (eqn.lh_letter(), dims,  dp_or_no)
+                func_name = f"{eqn.lh_letter()}{dims}dformta{dp_or_no}"
                 gen_vector_wrapper(func_name,
                 Template("""
                         integer ier(nvcount)
@@ -533,7 +520,7 @@ def gen_vector_wrappers():
                         ["ier", "expn"],
                         output_reductions={"expn": "sum", "ier": "max"},
                         tmp_init={"ier": "0"},
-                        vec_func_name=func_name + "_imany",
+                        vec_func_name=f"{func_name}_imany",
                         out_only_args=("ier", "expn"))
 
     # }}}
@@ -707,8 +694,8 @@ def gen_vector_wrappers():
             ("h", "complex*16 zk")
             ]:
         for expn_type in ["ta", "mp"]:
-            gen_vector_wrapper("%s3d%seval" % (what, expn_type), """
-                    %s
+            gen_vector_wrapper(f"{what}3d{expn_type}eval", f"""
+                    {extra_args}
                     real*8 rscale
                     real*8 center(3)
                     complex*16 expn(0:nterms,-nterms:nterms)
@@ -718,12 +705,12 @@ def gen_vector_wrappers():
                     integer iffld
                     complex*16 fld(3,nvcount)
                     integer ier(nvcount)
-                    """ % extra_args, ["ier", "pot", "fld"])
+                    """, ["ier", "pot", "fld"])
 
     for eqn in [cgh.Laplace(2), cgh.Helmholtz(2)]:
         for expn_type in ["ta", "mp"]:
             gen_vector_wrapper(
-                    "%s2d%seval" % (eqn.lh_letter(), expn_type),
+                    f"{eqn.lh_letter()}2d{expn_type}eval",
                     Template("""
                         ${eqn.in_arg_decls(with_intent=False)}
                         real*8 rscale
@@ -745,7 +732,7 @@ def gen_vector_wrappers():
             ]:
         hess_output = ""
         taeval_out_args = ["pot", "grad", "hess", "ier"]
-        taeval_func_name = "%s3dtaeval" % what
+        taeval_func_name = f"{what}3dtaeval"
         if what == "l":
             hess_output = """
                 integer ifhess
@@ -755,8 +742,8 @@ def gen_vector_wrappers():
             taeval_func_name += "hess"
             taeval_out_args.append("hess")
 
-        gen_vector_wrapper(taeval_func_name, """
-                %s
+        gen_vector_wrapper(taeval_func_name, f"""
+                {extra_args}
                 real*8 rscale(nvcount)
                 real*8 center(3,nvcount)
                 complex *16 expn(0:nterms,-nterms:nterms,nvcount)
@@ -765,10 +752,10 @@ def gen_vector_wrappers():
                 complex*16 pot(nvcount)
                 integer ifgrad
                 complex*16 grad(3,nvcount)
-                %s
+                {hess_output}
                 integer ier
-                """ % (extra_args, hess_output), taeval_out_args,
-                vec_func_name=taeval_func_name+"_1tgtperexp")
+                """, taeval_out_args,
+                vec_func_name=f"{taeval_func_name}_1tgtperexp")
 
     # }}}
 
@@ -800,7 +787,7 @@ def gen_vector_wrappers():
 
     def gen_xlat_func(dim, eqn, xlat, suffix, center1_dim, center2_dim,
             output_reductions, tmp_init, out_only_args):
-        func_name = "%s%dd%s" % (eqn.lh_letter(), dims, xlat)
+        func_name = f"{eqn.lh_letter()}{dims}d{xlat}"
         if dims == 3:
             func_name += "quadu"
 
@@ -860,7 +847,7 @@ def gen_vector_wrappers():
     dims = 3
     xlat = "mploc"
     for eqn in [cgh.Laplace(dims), cgh.Helmholtz(dims)]:
-        func_name = "%s%dd%squadu2_trunc" % (eqn.lh_letter(), dims, xlat)
+        func_name = f"{eqn.lh_letter()}{dims}d{xlat}quadu2_trunc"
 
         args_template = Template("""
             ${ extra_args }
@@ -902,7 +889,7 @@ def gen_vector_wrappers():
                 func_name,
                 args,
                 ["ier", "expn2"],
-                vec_func_name=func_name + "_imany",
+                vec_func_name=f"{func_name}_imany",
                 output_reductions={"expn2": "sum", "ier": "max"},
                 tmp_init={"ier": "0"})
 
