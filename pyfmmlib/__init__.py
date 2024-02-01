@@ -2,8 +2,8 @@
 import numpy as np
 
 import pyfmmlib._internal as _int
-from pyfmmlib._internal import *  # noqa
-from pyfmmlib.version import VERSION_TEXT as __version__  # noqa
+from pyfmmlib._internal import *  # noqa: F401,F403
+from pyfmmlib.version import VERSION_TEXT as __version__  # noqa: F401,N811
 
 
 # Map from matrix indices (i,j) in Hessian into output array of
@@ -40,7 +40,7 @@ class KernelBase:
     flag_value = 1
 
     def __hash__(self):
-        return hash((self.__class__,) + (self.__getinitargs__()))
+        return hash((self.__class__, *self.__getinitargs__()))
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and \
@@ -77,7 +77,7 @@ class HelmholtzKernel(KernelBase):
         return (self.k, )
 
     def __str__(self):
-        return "helm(%s)" % self.k
+        return f"helm({self.k})"
 
     def evaluate(self, evaluate_func):
         return type(self)(evaluate_func(self.k))
@@ -101,7 +101,7 @@ class DifferenceKernel(KernelBase):
         return (self.k, )
 
     def __str__(self):
-        return "diff(%s)" % self.k
+        return f"diff({self.k})"
 
     def evaluate(self, evaluate_func):
         return type(self)(evaluate_func(self.k))
@@ -211,24 +211,23 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
             pass
         elif isinstance(kernel, DifferenceKernel):
             if kind != "tria":
-                raise RuntimeError("difference kernel only supported "
-                        "on triangles")
+                raise RuntimeError("difference kernel only supported on triangles")
             #kind = "trif"
 
         if not isinstance(kernel,
                 (LaplaceKernel, HelmholtzKernel, DifferenceKernel)):
-            raise RuntimeError("unsupported kernel: %s" % kernel)
+            raise RuntimeError(f"unsupported kernel: {kernel}")
 
         # }}}
 
-        args = [iprec] + list(kernel.k_arg) + source_args + [
+        args = [iprec, *kernel.k_arg, *source_args,
                 ifcharge, slp_density,
                 ifdipole, dlp_density, dipvec,
                 "p" in what, "g" in what, ntarget, target.T,
                 "P" in what, pottarg,
                 "G" in what, fldtarg.T]
 
-        routine_name = "%sfmm%dd%starg" % (kernel.letter, dimensions, kind)
+        routine_name = f"{kernel.letter}fmm{dimensions}d{kind}targ"
 
         if debug:
             print("ENTER", routine_name)
@@ -251,7 +250,7 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
         # {{{ process kernel argument
 
         if not isinstance(kernel, (LaplaceKernel, HelmholtzKernel)):
-            raise RuntimeError("unsupported kernel: %s" % kernel)
+            raise RuntimeError(f"unsupported kernel: {kernel}")
 
         # }}}
 
@@ -265,13 +264,12 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
         else:
             hess_str = ""
 
-        routine_name = "%sfmm%dd%s%starg" % (
-                kernel.letter, dimensions, kind, hess_str)
-        args = [iprec] + list(kernel.k_arg) + source_args + [
+        routine_name = f"{kernel.letter}fmm{dimensions}d{kind}{hess_str}targ"
+        args = [iprec, *kernel.k_arg, *source_args,
                 ifcharge, slp_density,
                 ifdipole, dlp_density, dipvec]
 
-        args = args + [
+        args = [*args,
                 "p" in what, "g" in what, "h" in what, ntarget, target.T,
                 "P" in what, pottarg,
                 "G" in what, fldtarg.T,
@@ -298,8 +296,7 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
 
     if ier:
         from warnings import warn
-        warn("FMM routine '%s' encountered an error (code %d)" % (
-            routine_name, ier))
+        warn(f"FMM routine '{routine_name}' encountered an error (code {ier})")
 
     result = [result_dict[wch]() for wch in what.replace(",", "")]
 
