@@ -16,3 +16,4 @@ version: 2022.1.1
 doi: 10.5281/zenodo.6998966
 date-released: 2022-08-16
 url: "https://github.com/inducer/pyfmmlib"
+license: MIT
