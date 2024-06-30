@@ -3,7 +3,7 @@ build-backend = "mesonpy"
 requires = [
     "mako",
     "meson-python",
-    "oldest-supported-numpy",
+    "numpy",
     "wheel",
 ]
 
@@ -42,14 +42,53 @@ classifiers = [
 dependencies = [
     "numpy",
 ]
+
 [project.optional-dependencies]
-dev = [
-    "flake8",
-    "flake8-bugbear",
-    "flake8-isort",
-    "flake8-quotes",
-    "isort",
-    "pep8-naming",
+doc = [
+    "furo",
+    "sphinx>=4",
+    "sphinx-copybutton",
 ]
+test = [
+    "mako",
+    "pytest",
+    "ruff",
+]
+
 [project.urls]
 Repository = "https://github.com/inducer/pyfmmlib"
+
+[tool.ruff.lint]
+preview = true
+extend-select = [
+    "B",    # flake8-bugbear
+    "C",    # flake8-comprehensions
+    "D",    # pydocstyle
+    "E",    # pycodestyle
+    "F",    # pyflakes
+    "I",    # flake8-isort
+    "N",    # pep8-naming
+    "NPY",  # numpy
+    "PLE",  # pylint error
+    "Q",    # flake8-quotes
+    "W",    # pycodestyle
+]
+extend-ignore = [
+    "E226", # missing whitespace around arithmetic operator
+    "E241", # multiple spaces after comma
+    "E242", # tab after comma
+    "E265", # block comment should start with #
+    "E402", # module level import not at the top of file
+    "D",    # pydocstyle
+    "C90",  # McCabe complexity
+]
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "double"
+docstring-quotes = "double"
+multiline-quotes = "double"
+
+[tool.ruff.lint.isort]
+known-local-folder = ["pyfmmlib"]
+lines-after-imports = 2
+combine-as-imports = true
