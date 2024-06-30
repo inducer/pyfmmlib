@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Demo of Theodorsen's method for conformal mapping.
-"""
+"""Demo of Theodorsen's method for conformal mapping."""
 
 __copyright__ = "Copyright (C) 2020 Matt Wala"
 
@@ -354,7 +353,7 @@ if __name__ == "__main__":
         import matplotlib  # noqa: F401
     except ImportError:
         from warnings import warn
-        warn("matplotlib not installed, not visualizing")
+        warn("matplotlib not installed, not visualizing", stacklevel=1)
         visualize = False
     else:
         visualize = True

@@ -8,14 +8,18 @@ from pyfmmlib import HelmholtzKernel, fmm_part
 
 
 def main():
-    sources = np.random.randn(40, 2)
+    rng = np.random.default_rng(seed=42)
+    sources = rng.normal(size=(40, 2))
 
     targets = np.mgrid[-7:7:400j, -7:7:400j]
     pot_shape = targets.shape[1:]
     targets = targets.reshape(2, -1)
 
-    pot, grad = fmm_part("PG", iprec=2, kernel=HelmholtzKernel(5),
-            sources=sources, mop_charge=1, target=targets.T)
+    pot, _grad = fmm_part(
+        "PG",
+        iprec=2,
+        kernel=HelmholtzKernel(5),
+        sources=sources, mop_charge=1, target=targets.T)
 
     pot = pot.reshape(pot_shape)
 

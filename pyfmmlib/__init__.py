@@ -1,4 +1,3 @@
-
 import numpy as np
 
 import pyfmmlib._internal as _int
@@ -296,7 +295,9 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
 
     if ier:
         from warnings import warn
-        warn(f"FMM routine '{routine_name}' encountered an error (code {ier})")
+
+        warn(f"FMM routine '{routine_name}' encountered an error (code {ier})",
+             stacklevel=3)
 
     result = [result_dict[wch]() for wch in what.replace(",", "")]
 

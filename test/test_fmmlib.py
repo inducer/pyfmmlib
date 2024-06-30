@@ -7,26 +7,30 @@ from pyfmmlib import LaplaceKernel, fmm_part, fmm_tria
 
 
 def test_fmm():
+    rng = np.random.default_rng(seed=42)
+
     for dims in [2, 3]:
         for kernel in [0, 5]:
-            sources = np.random.randn(4000, dims)
-            dipvec = np.random.randn(4000, dims)
+            sources = rng.normal(size=(4000, dims))
+            dipvec = rng.normal(size=(4000, dims))
             fmm_part("pg", iprec=1, kernel=kernel, sources=sources,
-                    dip_charge=1, dipvec=dipvec,
-                    debug=True)
+                     dip_charge=1, dipvec=dipvec,
+                     debug=True)
 
             targ_def = (slice(-3, 3, 20j),)
             targets = np.mgrid[targ_def*dims]
             targets = targets.reshape(dims, -1)
 
             fmm_part("PG", iprec=1, kernel=kernel,
-                    sources=sources, mop_charge=1, target=targets.T,
-                    debug=True)
+                     sources=sources, mop_charge=1, target=targets.T,
+                     debug=True)
 
 
 def test_triangle():
+    rng = np.random.default_rng(seed=42)
+
     n = 3
-    triangles = np.random.rand(n, 3, 3)
+    triangles = rng.random(size=(n, 3, 3))
     centroids = np.mean(triangles, axis=1)
 
     normals = np.cross(
@@ -35,7 +39,7 @@ def test_triangle():
 
     normals /= np.linalg.norm(normals, axis=0)
 
-    charges = np.random.rand(n)
+    charges = rng.random(size=n)
 
     class Mesh:
         def __init__(self, triangles, normals, centroids):
@@ -77,21 +81,29 @@ def test_triangle():
 
 
 def test_translations():
+    rng = np.random.default_rng(seed=42)
+
+    n = 40
     nterms = 15
     zk = 3
     rscale = 1
 
-    n = 40
     # centered at the origin, extent [-.5,.5]
-    sources = np.random.uniform(size=(n, 2)) - 0.5
-    charges = np.random.uniform(size=n)
+    sources = rng.uniform(-0.5, 0.5, size=(n, 2))
+    charges = rng.uniform(size=n)
 
     targets_center = np.array([10, 0])
-    targets = np.random.uniform(size=(n, 2)) - 0.5 + targets_center
+    targets = rng.uniform(size=(n, 2)) - 0.5 + targets_center
 
     from pyfmmlib import (
-        h2dformmp, h2dlocloc_vec, h2dmpeval_vec, h2dmploc_vec, h2dmpmp_vec,
-        h2dtaeval_vec, hpotgrad2dall_vec)
+        h2dformmp,
+        h2dlocloc_vec,
+        h2dmpeval_vec,
+        h2dmploc_vec,
+        h2dmpmp_vec,
+        h2dtaeval_vec,
+        hpotgrad2dall_vec,
+    )
 
     ref_value, _, _ = hpotgrad2dall_vec(ifgrad=False, ifhess=False,
             sources=sources.T, charge=charges,

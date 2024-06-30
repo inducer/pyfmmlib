@@ -59,7 +59,7 @@ def main():
                             "--build-dir", outdir_abs],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             cwd=os.getcwd())
-        out, err = p.communicate()
+        out, _ = p.communicate()
         if not (p.returncode == 0):
             raise RuntimeError(f"f2py failed!\n"
                             f"{out}\n"
