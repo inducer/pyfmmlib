@@ -31,7 +31,7 @@ def main():
         pt.imshow(pot.real)
         outfile = "helmholtz-potential.png"
         pt.savefig(outfile)
-        print("wrote '%s'" % outfile)
+        print(f"wrote '{outfile}'")
 
 
 if __name__ == "__main__":

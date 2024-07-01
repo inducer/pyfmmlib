@@ -1,7 +1,7 @@
 import numpy as np
 
 import pyfmmlib._internal as _int
-from pyfmmlib._internal import *  # noqa: F401,F403
+from pyfmmlib._internal import *  # noqa: F403
 from pyfmmlib.version import VERSION_TEXT as __version__  # noqa: F401,N811
 
 

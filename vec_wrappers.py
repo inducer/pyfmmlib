@@ -253,7 +253,7 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
 
     # {{{ code generation
 
-    call_args_str = ", ".join(passed_args_names + ["nvcount"])
+    call_args_str = ", ".join([*passed_args_names, "nvcount"])
     for line in wrap_line(f"subroutine {vec_func_name}({call_args_str})"):
         yield line
 

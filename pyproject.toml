@@ -61,16 +61,20 @@ Repository = "https://github.com/inducer/pyfmmlib"
 [tool.ruff.lint]
 preview = true
 extend-select = [
+    "A",    # flake8-builtins
     "B",    # flake8-bugbear
-    "C",    # flake8-comprehensions
+    "C4",   # flake8-comprehensions
     "D",    # pydocstyle
     "E",    # pycodestyle
     "F",    # pyflakes
+    "G",    # flake8-logging-format
     "I",    # flake8-isort
     "N",    # pep8-naming
     "NPY",  # numpy
     "PLE",  # pylint error
     "Q",    # flake8-quotes
+    "RUF",  # ruff
+    "UP",   # pyupgrade
     "W",    # pycodestyle
 ]
 extend-ignore = [
