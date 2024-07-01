@@ -1,13 +1,10 @@
-from __future__ import division
-
-
 def hess_size(d):
     return (d*d+d)//2
 
 
 # {{{ equations
 
-class Equation(object):
+class Equation:
     def __init__(self, dimensions):
         self.dimensions = dimensions
 
@@ -29,9 +26,9 @@ class Laplace(Equation):
 
     def expansion_dims(self, nterms):
         if self.dimensions == 2:
-            return "0:%(nterms)s" % locals()
+            return f"0:{nterms}" % locals()
         elif self.dimensions == 3:
-            return "0:%(nterms)s,-(%(nterms)s):%(nterms)s" % locals()
+            return f"0:{nterms},-({nterms}):{nterms}"
         else:
             raise RuntimeError("invalid dimensionality")
 
@@ -58,9 +55,9 @@ class Helmholtz(Equation):
 
     def expansion_dims(self, nterms):
         if self.dimensions == 2:
-            return "-(%(nterms)s):%(nterms)s" % locals()
+            return f"-({nterms}):{nterms}"
         elif self.dimensions == 3:
-            return "0:%(nterms)s,-(%(nterms)s):%(nterms)s" % locals()
+            return f"0:{nterms},-({nterms}):{nterms}"
         else:
             raise RuntimeError("invalid dimensionality")
 
