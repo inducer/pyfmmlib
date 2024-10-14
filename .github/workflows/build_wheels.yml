@@ -22,7 +22,7 @@ jobs:
           submodules: true
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.21.2
+        uses: pypa/cibuildwheel@v2.21.3
         env:
           # No Fortran compiler available on macOS
           # Numpys (numpies?) on excluded versions have f2py that doesn't write
