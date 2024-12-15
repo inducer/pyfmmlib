@@ -9,7 +9,7 @@ requires = [
 
 [project]
 name = "pyfmmlib"
-version = "2024.1.1"
+version = "2024.2"
 description = "Python wrappers for particle FMMs"
 readme= "README.rst"
 license = { text = "MIT" }
