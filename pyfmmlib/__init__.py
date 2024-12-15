@@ -213,8 +213,7 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
                 raise RuntimeError("difference kernel only supported on triangles")
             #kind = "trif"
 
-        if not isinstance(kernel,
-                (LaplaceKernel, HelmholtzKernel, DifferenceKernel)):
+        if not isinstance(kernel, LaplaceKernel | HelmholtzKernel | DifferenceKernel):
             raise RuntimeError(f"unsupported kernel: {kernel}")
 
         # }}}
@@ -248,7 +247,7 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
 
         # {{{ process kernel argument
 
-        if not isinstance(kernel, (LaplaceKernel, HelmholtzKernel)):
+        if not isinstance(kernel, LaplaceKernel | HelmholtzKernel):
             raise RuntimeError(f"unsupported kernel: {kernel}")
 
         # }}}
