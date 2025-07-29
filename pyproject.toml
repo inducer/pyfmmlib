@@ -91,3 +91,6 @@ multiline-quotes = "double"
 known-local-folder = ["pyfmmlib"]
 lines-after-imports = 2
 combine-as-imports = true
+
+[tool.cibuildwheel]
+skip = ["cp31?t-*"]
