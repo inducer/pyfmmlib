@@ -15,15 +15,16 @@ pyfmmlib: A Python Interface to FMMLIB
     :target: https://zenodo.org/badge/latestdoi/8921021
 
 pyfmmlib is a Python wrapper for `fmmlib2d
-<https://cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html>`_ and `fmmlib3d
-<https://cims.nyu.edu/cmcl/fmm3dlib/fmm3dlib.html>`_ implementations of the
-`fast multipole method <https://en.wikipedia.org/wiki/Fast_multipole_method>`_ for
-`Laplace <https://en.wikipedia.org/wiki/Laplace%27s_equation>`_ and
-`Helmholtz <https://en.wikipedia.org/wiki/Helmholtz_equation>`_ potentials by
+<https://cims.nyu.edu/cmcl/fmm2dlib/fmm2dlib.html>`__ and `fmmlib3d
+<https://cims.nyu.edu/cmcl/fmm3dlib/fmm3dlib.html>`__ implementations of the
+`fast multipole method <https://en.wikipedia.org/wiki/Fast_multipole_method>`__ for
+`Laplace <https://en.wikipedia.org/wiki/Laplace%27s_equation>`__ and
+`Helmholtz <https://en.wikipedia.org/wiki/Helmholtz_equation>`__ potentials by
 Zydrunas Gimbutas and Leslie Greengard (and including code by many more people).
 
 This wrapper is far from comprehensive. It just catches the things I ended up
-needing. Nonetheless, the FMMs and a fair bit of other useful stuff is accessible.
+needing. Nonetheless, the FMMs and a fair bit of other useful stuff is
+accessible.
 
 Installation
 ------------
@@ -44,8 +45,8 @@ Not much, unfortunately. Here's what I do to figure out how to use stuff::
     >>> dir(pyfmmlib)
     ['__builtins__', '__doc__', '__file__', '__name__', '__package__', '_add_plot', ...]
 
-    Fish the desired function from this list (let's use 'legefder' as an
-    example) and run:
+Fish the desired function from this list (let's use 'legefder' as an example)
+and run::
 
     >>> print pyfmmlib.legefder.__doc__
     legefder - Function signature:
@@ -59,23 +60,21 @@ Not much, unfortunately. Here's what I do to figure out how to use stuff::
       val : float
       der : float
 
-This tells you how to call the function from Python.
-You can then use grep to fish out the right Fortran source::
+This tells you how to call the function from Python. You can then use grep to
+fish out the right Fortran source::
 
     $ grep -icl 'legefder' fmmlib*/*/*.f
     fmmlib3d/src/legeexps.f
 
-Then look at the docs there, and you're in business. No idea what
-function name to look for? Just use the same grep procedure to look
-for keywords.
+Then look at the docs there, and you're in business. No idea what function name
+to look for? Just use the same grep procedure to look for keywords.
 
 Crude, but effective. :)
 
 Two more things:
 
-* Some functions are wrapped with a ``_vec`` suffix. This means they
-  apply to whole vectors of arguments at once. They're also parallel
-  via OpenMP.
+* Some functions are wrapped with a ``_vec`` suffix. This means they apply to
+  whole vectors of arguments at once. They're also parallel via OpenMP.
 
 * ``pyfmmlib.fmm_part`` and ``pyfmmlib.fmm_tria`` are (dimension-independent)
   wrappers that make the calling sequence for the FMMs just a wee bit less
@@ -89,12 +88,12 @@ Two more things:
               sources=sources, mop_charge=1, target=targets)
 
   Unlike the rest of the library (which calls directly into Fortran),
-  these routines expect ``(n,3)``-shaped (that is, C-Order) arrays.
+  these routines expect ``(n, 3)``-shaped (that is, C-Order) arrays.
 
 License
 -------
 
-`fmmlib{2,3}d` are licensed under the 3-clause BSD license. (as of November 2017)
+``fmmlib{2,3}d`` are licensed under the 3-clause BSD license. (as of November 2017)
 
 This wrapper is licensed under the MIT license, as below.
 
