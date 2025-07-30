@@ -12,7 +12,7 @@ name = "pyfmmlib"
 version = "2024.2"
 description = "Python wrappers for particle FMMs"
 readme= "README.rst"
-license = { text = "MIT" }
+license = "MIT AND BSD-3-Clause"
 maintainers = [{ name = "Andreas Kloeckner", email = "inform@tiker.net" }]
 authors = [
     { name = "Andreas Kloeckner", email = "inform@tiker.net" },
@@ -26,8 +26,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: Other Audience",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: BSD License",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Fortran",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
@@ -73,13 +71,13 @@ extend-select = [
     "W",    # pycodestyle
 ]
 extend-ignore = [
+    "C90",  # McCabe complexity
+    "D",    # pydocstyle
     "E226", # missing whitespace around arithmetic operator
     "E241", # multiple spaces after comma
     "E242", # tab after comma
     "E265", # block comment should start with #
     "E402", # module level import not at the top of file
-    "D",    # pydocstyle
-    "C90",  # McCabe complexity
 ]
 
 [tool.ruff.lint.flake8-quotes]
