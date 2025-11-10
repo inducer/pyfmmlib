@@ -36,7 +36,7 @@ jobs:
                 python-version: "3.x"
         -   name: "Main Script"
             run: |
-                export FC=gfortran-12
+                export FC=gfortran-13
                 PROJECT_INSTALL_FLAGS="--no-build-isolation"
                 EXTRA_INSTALL="numpy meson-python ninja mako scipy"
 
