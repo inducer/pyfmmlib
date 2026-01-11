@@ -57,7 +57,6 @@ extend-select = [
     "A",    # flake8-builtins
     "B",    # flake8-bugbear
     "C4",   # flake8-comprehensions
-    "D",    # pydocstyle
     "E",    # pycodestyle
     "F",    # pyflakes
     "G",    # flake8-logging-format
@@ -72,12 +71,12 @@ extend-select = [
 ]
 extend-ignore = [
     "C90",  # McCabe complexity
-    "D",    # pydocstyle
     "E226", # missing whitespace around arithmetic operator
     "E241", # multiple spaces after comma
     "E242", # tab after comma
     "E265", # block comment should start with #
     "E402", # module level import not at the top of file
+    "RUF067",   # non-empty-init-module
 ]
 
 [tool.ruff.lint.flake8-quotes]
