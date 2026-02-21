@@ -208,7 +208,7 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
         if isinstance(kernel, HelmholtzKernel):
             #kind = kind.replace("tria", "trif")
             pass
-        elif isinstance(kernel, DifferenceKernel):
+        elif isinstance(kernel, DifferenceKernel):  # noqa: SIM102
             if kind != "tria":
                 raise RuntimeError("difference kernel only supported on triangles")
             #kind = "trif"

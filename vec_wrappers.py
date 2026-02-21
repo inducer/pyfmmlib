@@ -370,8 +370,7 @@ def gen_vector_wrappers():
     result = []
 
     def gen_vector_wrapper(*args, **kwargs):
-        for line in get_vector_wrapper(*args, **kwargs):
-            result.append(line)
+        result.extend(get_vector_wrapper(*args, **kwargs))
 
     def render_template(tpl_string, **kwargs):
         from codegen_helpers import cpost, cpre
