@@ -219,7 +219,7 @@ def ellipkinc(phi, m):
     implementation supports complex *phi*.
     """
 
-    # See: http://www.mygeodesy.id.au/documents/Elliptic%20Integrals%20and%20Landen%27s%20Transformation.pdf  # noqa: E501
+    # See: http://www.mygeodesy.id.au/documents/Elliptic%20Integrals%20and%20Landen%27s%20Transformation.pdf
     m = np.sqrt(m)
     factor = 1 / m
     while not np.isclose(m, 1, atol=1e-15, rtol=1e-15):
