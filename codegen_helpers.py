@@ -26,7 +26,7 @@ class Laplace(Equation):
 
     def expansion_dims(self, nterms):
         if self.dimensions == 2:
-            return f"0:{nterms}" % locals()
+            return f"0:{nterms}"
         elif self.dimensions == 3:
             return f"0:{nterms},-({nterms}):{nterms}"
         else:
