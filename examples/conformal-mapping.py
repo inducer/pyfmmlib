@@ -230,7 +230,7 @@ def ellipkinc(phi, m):
     return np.sqrt(factor) * np.log(np.tan(np.pi / 4 + phi / 2))
 
 
-def K(x, k):  # noqa: N802
+def K(x, k):  # ruff:ignore[invalid-function-name]
     """Alternative definition for the incomplete elliptic integral of the first
     kind.
     """
@@ -350,7 +350,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     try:
-        import matplotlib  # noqa: F401
+        import matplotlib  # ruff:ignore[unused-import]
     except ImportError:
         from warnings import warn
         warn("matplotlib not installed, not visualizing", stacklevel=1)

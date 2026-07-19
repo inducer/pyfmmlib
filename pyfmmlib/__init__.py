@@ -1,8 +1,10 @@
 import numpy as np
 
 import pyfmmlib._internal as _int
-from pyfmmlib._internal import *  # noqa: F403
-from pyfmmlib.version import VERSION_TEXT as __version__  # noqa: F401,N811
+from pyfmmlib._internal import *  # ruff:ignore[undefined-local-with-import-star]
+from pyfmmlib.version import (
+    VERSION_TEXT as __version__,  # ruff:ignore[unused-import, constant-imported-as-non-constant]
+)
 
 
 # Map from matrix indices (i,j) in Hessian into output array of
@@ -208,7 +210,7 @@ def _fmm(dimensions, size, kind, source_args, what, iprec, kernel,
         if isinstance(kernel, HelmholtzKernel):
             #kind = kind.replace("tria", "trif")
             pass
-        elif isinstance(kernel, DifferenceKernel):  # noqa: SIM102
+        elif isinstance(kernel, DifferenceKernel):  # ruff:ignore[collapsible-if]
             if kind != "tria":
                 raise RuntimeError("difference kernel only supported on triangles")
             #kind = "trif"
