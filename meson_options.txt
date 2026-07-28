@@ -1,0 +1,6 @@
+option(
+  'openmp',
+  type: 'feature',
+  value: 'auto',
+  description: 'Build the generated vec wrappers with OpenMP parallelism',
+)

@@ -4,6 +4,12 @@ project('pyfmmlib', 'c', 'fortran',
   default_options : ['warning_level=2', 'fortran_std=legacy'],
 )
 
+# OpenMP for the generated vec wrappers (their !$omp pragmas are inert without it)
+omp_dep = dependency('openmp', language: 'fortran', required: get_option('openmp'))
+if not omp_dep.found()
+  warning('OpenMP not found; vec wrappers will build serial')
+endif
+
 # {{{ gather includes
 
 py_mod = import('python')
@@ -137,7 +143,7 @@ py.extension_module(f2py_name,
   link_with: [fmmlib2d_static, fmmlib3d_static],
   subdir: 'pyfmmlib',
   link_language: 'fortran',
-  dependencies: [f2py_object_dep],
+  dependencies: [f2py_object_dep, omp_dep],
   include_directories: [incdir_numpy, incdir_f2py],
   install: true)
 
