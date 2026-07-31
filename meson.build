@@ -10,6 +10,15 @@ if not omp_dep.found()
   warning('OpenMP not found; vec wrappers will build serial')
 endif
 
+# The extension module mixes f2py-generated C with Fortran, and meson applies a
+# dependency's compile args to every language in a target — which breaks on
+# toolchains whose C compiler lacks OpenMP (e.g. Apple clang). Keep the
+# -fopenmp compile flag confined to the Fortran-only vec_wrappers library
+# below; the extension itself only needs OpenMP at link time.
+omp_link_dep = omp_dep.found() \
+  ? omp_dep.partial_dependency(links: true, link_args: true) \
+  : omp_dep
+
 # {{{ gather includes
 
 py_mod = import('python')
@@ -134,16 +143,21 @@ fmmlib3d_sources = [
 
 fmmlib3d_static = static_library('fmmlib3d_static', fmmlib3d_sources, pic: true)
 
+vec_wrappers_static = static_library('vec_wrappers_static', vec_wrappers,
+  pic: true,
+  dependencies: omp_dep)
+
 # }}}
 
 # {{{ extension
 
 py.extension_module(f2py_name,
-  [f2py_dep, vec_wrappers],
+  f2py_dep,
   link_with: [fmmlib2d_static, fmmlib3d_static],
+  link_whole: vec_wrappers_static,
   subdir: 'pyfmmlib',
   link_language: 'fortran',
-  dependencies: [f2py_object_dep, omp_dep],
+  dependencies: [f2py_object_dep, omp_link_dep],
   include_directories: [incdir_numpy, incdir_f2py],
   install: true)
 
