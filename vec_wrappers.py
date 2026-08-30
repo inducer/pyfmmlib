@@ -331,8 +331,7 @@ def get_vector_wrapper(func_name, args, out_args, vec_func_name=None,
     for _type, name, shape in args:
         shared_vars.append(name)
         if shape and MANY_MARKER in shape:
-            shared_vars.append(f"{name}_offsets")
-            shared_vars.append(f"{name}_starts")
+            shared_vars.extend((f"{name}_offsets", f"{name}_starts"))
         if shape and INDIRECT_MARKER in shape:
             shared_vars.append(f"{name}_offsets")
 
