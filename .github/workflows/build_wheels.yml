@@ -22,7 +22,7 @@ jobs:
           submodules: true
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v4.3.1
+        uses: pypa/cibuildwheel@v4.3.4
         env:
           # No Fortran compiler available on macOS
           # Numpys (numpies?) on excluded versions have f2py that doesn't write
@@ -63,7 +63,7 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - uses: pypa/gh-action-pypi-publish@v1.14.2
+      - uses: pypa/gh-action-pypi-publish@v1.14.3
         with:
           user: __token__
           password: ${{ secrets.pypi_password }}
